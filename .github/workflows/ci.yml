@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A new push to the same ref makes the running check obsolete.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      # Version taken from package.json packageManager.
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          # .nvmrc, not the engines field: the tests are TypeScript run directly
+          # and need type stripping on by default.
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      # test/sl2/real-save.test.ts skips itself when the runner has no save file.
+      - run: pnpm test
+      # Building here too catches anything that only breaks at bundle time,
+      # before Vercel finds out.
+      - run: pnpm build

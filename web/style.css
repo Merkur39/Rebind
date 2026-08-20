@@ -1,0 +1,373 @@
+:root {
+  --bg: #12100e;
+  --panel: #1b1815;
+  --line: #322c25;
+  --ink: #e8e2d8;
+  --muted: #a2988a;
+  --gold: #c8aa6e;
+  --bad: #e07a5f;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 2rem 1rem 4rem;
+  background: var(--bg);
+  color: var(--ink);
+  font: 16px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+main {
+  max-width: 42rem;
+  margin: 0 auto;
+}
+
+h1 {
+  margin: 0 0 0.25rem;
+  font-size: 2rem;
+  letter-spacing: 0.02em;
+  color: var(--gold);
+}
+
+/* Spacing lives on the section, not on the heading: the export panel has
+   sections without one, and they were collapsing against each other. */
+section {
+  margin-top: 2.5rem;
+}
+
+h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0 0 0.75rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.step {
+  display: grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border: 1px solid var(--gold);
+  border-radius: 50%;
+  color: var(--gold);
+  font-size: 0.85rem;
+}
+
+.lede {
+  margin: 0 0 1rem;
+  color: var(--muted);
+}
+
+.privacy {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  border-left: 3px solid var(--gold);
+  background: var(--panel);
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.privacy strong {
+  color: var(--ink);
+}
+
+.drop {
+  display: grid;
+  place-items: center;
+  gap: 0.35rem;
+  padding: 2.5rem 1rem;
+  border: 2px dashed var(--line);
+  border-radius: 0.75rem;
+  background: var(--panel);
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.drop:hover,
+.drop:focus-visible,
+.drop.over {
+  border-color: var(--gold);
+  background: #221e19;
+  outline: none;
+}
+
+.drop-hint {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+code,
+kbd {
+  padding: 0.1em 0.35em;
+  border-radius: 0.25rem;
+  background: #2a2520;
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: 0.9em;
+}
+
+.report {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  background: var(--panel);
+}
+
+.report.bad {
+  border-color: var(--bad);
+}
+
+.report p {
+  margin: 0 0 0.35rem;
+}
+
+.filename {
+  font-weight: 600;
+  word-break: break-all;
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 400;
+}
+
+.note {
+  color: var(--gold);
+  font-style: italic;
+}
+
+.characters {
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: 0.9rem;
+  white-space: pre;
+  overflow-x: auto;
+}
+
+.help {
+  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+input[type="text"] {
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  background: var(--panel);
+  color: var(--ink);
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: 1rem;
+}
+
+input[type="text"]:focus-visible {
+  border-color: var(--gold);
+  outline: none;
+}
+
+button {
+  padding: 0.75rem 1.4rem;
+  border: 1px solid var(--gold);
+  border-radius: 0.5rem;
+  background: var(--gold);
+  color: #1a1510;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button:disabled {
+  border-color: var(--line);
+  background: transparent;
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
+.error {
+  margin: 0.5rem 0 0;
+  color: var(--bad);
+  font-size: 0.9rem;
+}
+
+.status {
+  margin: 0.75rem 0 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+  word-break: break-all;
+}
+
+footer {
+  margin-top: 3.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--line);
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+footer p {
+  margin: 0 0 0.6rem;
+}
+
+.warn {
+  color: var(--bad);
+}
+
+a {
+  color: var(--gold);
+}
+
+.languages {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+}
+
+.lang {
+  padding: 0.3rem 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 0.4rem;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 400;
+}
+
+.lang:hover {
+  border-color: var(--gold);
+  color: var(--ink);
+}
+
+.lang.current {
+  border-color: var(--gold);
+  color: var(--gold);
+  font-weight: 600;
+}
+
+.tabs {
+  display: flex;
+  gap: 0.25rem;
+  margin: 2rem 0 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.tab {
+  padding: 0.6rem 1.1rem;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: 0.4rem 0.4rem 0 0;
+  margin-bottom: -1px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.95rem;
+  font-weight: 400;
+}
+
+.tab:hover {
+  color: var(--ink);
+}
+
+.tab.current {
+  border-color: var(--line);
+  border-bottom-color: var(--bg);
+  background: var(--panel);
+  color: var(--gold);
+  font-weight: 600;
+}
+
+.field-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+#note {
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  background: var(--panel);
+  color: var(--ink);
+  font: inherit;
+}
+
+#note:focus-visible {
+  border-color: var(--gold);
+  outline: none;
+}
+
+.report hr {
+  height: 1px;
+  margin: 1rem 0;
+  border: none;
+  background: var(--line);
+}
+
+/* Each save gets its own card: a pack carries a set, and without a frame the
+   names, accounts and slot lines of several saves run together. */
+.saves {
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.save {
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--gold);
+  border-radius: 0.4rem;
+  background: var(--bg);
+}
+
+.save + .save {
+  margin-top: 0.6rem;
+}
+
+.save-name {
+  margin: 0 0 0.15rem;
+  color: var(--gold);
+  font-weight: 600;
+  word-break: break-all;
+}
+
+.save-name.muted {
+  color: var(--muted);
+  font-weight: 400;
+  font-style: italic;
+}
+
+.save .characters {
+  margin-top: 0.6rem;
+}
+
+.legal {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+}
+
+.legal summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.legal summary:hover {
+  color: var(--ink);
+}
+
+.legal p {
+  margin: 0.75rem 0 0;
+}

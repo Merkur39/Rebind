@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Rebind — use another player’s Elden Ring save</title>
+    <meta
+      name="description"
+      content="Rebind an Elden Ring save someone shared with you to your own Steam account, or pack your own saves to share them. Entirely in your browser."
+    />
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main>
+      <nav class="languages" aria-label="Language">
+        <button type="button" class="lang" data-lang="en" lang="en">
+          English
+        </button>
+        <button type="button" class="lang" data-lang="fr" lang="fr">
+          Français
+        </button>
+      </nav>
+
+      <header>
+        <h1 data-t="title">Rebind</h1>
+        <p class="lede" data-t="ledeHtml"></p>
+        <p class="privacy" data-t="privacyHtml"></p>
+      </header>
+
+      <div class="tabs" role="tablist">
+        <button
+          type="button"
+          class="tab"
+          role="tab"
+          id="tab-convert"
+          data-tab="convert"
+          aria-controls="panel-convert"
+          aria-selected="true"
+          data-t="tabConvert"
+        ></button>
+        <button
+          type="button"
+          class="tab"
+          role="tab"
+          id="tab-export"
+          data-tab="export"
+          aria-controls="panel-export"
+          aria-selected="false"
+          data-t="tabExport"
+        ></button>
+      </div>
+
+      <div id="panel-convert" role="tabpanel" aria-labelledby="tab-convert">
+        <section aria-labelledby="step-1">
+          <h2 id="step-1">
+            <span class="step">1</span> <span data-t="step1"></span>
+          </h2>
+          <label id="drop" class="drop" for="file" tabindex="0">
+            <input id="file" type="file" accept=".sl2,.zip,.bak" hidden />
+            <span class="drop-text" data-t="dropHtml"></span>
+            <span class="drop-hint" data-t="dropHint"></span>
+          </label>
+          <div id="file-report" class="report" hidden></div>
+        </section>
+
+        <section aria-labelledby="step-2">
+          <h2 id="step-2">
+            <span class="step">2</span> <span data-t="step2"></span>
+          </h2>
+          <p class="help" data-t="steamIdHelpHtml"></p>
+          <input
+            id="steamid"
+            type="text"
+            inputmode="numeric"
+            autocomplete="off"
+            spellcheck="false"
+            placeholder="76561197960265728"
+            aria-describedby="steamid-error"
+          />
+          <p id="steamid-error" class="error" hidden></p>
+        </section>
+
+        <section aria-labelledby="step-3">
+          <h2 id="step-3">
+            <span class="step">3</span> <span data-t="step3"></span>
+          </h2>
+          <button id="convert" type="button" disabled data-t="convert"></button>
+          <p id="status" class="status" role="status" aria-live="polite"></p>
+        </section>
+      </div>
+
+      <div
+        id="panel-export"
+        role="tabpanel"
+        aria-labelledby="tab-export"
+        hidden
+      >
+        <section>
+          <p class="help" data-t="exportIntroHtml"></p>
+          <label id="export-drop" class="drop" for="export-file" tabindex="0">
+            <input
+              id="export-file"
+              type="file"
+              accept=".sl2,.zip,.bak"
+              multiple
+              hidden
+            />
+            <span class="drop-text" data-t="exportDropHtml"></span>
+            <span class="drop-hint" data-t="exportDropHint"></span>
+          </label>
+          <div id="export-report" class="report" hidden></div>
+        </section>
+
+        <section>
+          <label class="field-label" for="note" data-t="noteLabel"></label>
+          <input id="note" type="text" autocomplete="off" maxlength="120" />
+        </section>
+
+        <section>
+          <button
+            id="export"
+            type="button"
+            disabled
+            data-t="exportButton"
+          ></button>
+          <p
+            id="export-status"
+            class="status"
+            role="status"
+            aria-live="polite"
+          ></p>
+        </section>
+      </div>
+
+      <footer>
+        <p data-t="footerHtml"></p>
+
+        <details class="legal">
+          <summary data-t="legalTitle"></summary>
+          <p data-t="notAffiliatedHtml"></p>
+          <p data-t="noDataHtml"></p>
+          <p class="warn" data-t="onlineRiskHtml"></p>
+          <p data-t="warrantyHtml"></p>
+          <p data-t="licenceHtml"></p>
+        </details>
+      </footer>
+    </main>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

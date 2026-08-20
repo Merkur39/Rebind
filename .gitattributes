@@ -1,0 +1,10 @@
+# Line endings are normalised to LF in the repository and in the working copy,
+# so a checkout on Windows does not turn every file into a diff for everyone else.
+* text=auto eol=lf
+
+# Save data and packs are binary: no end-of-line filter may ever touch them.
+# They are gitignored as well; this is the second line of defence in case one is
+# force-added as a test fixture.
+*.sl2 binary
+*.bak binary
+*.savepack binary
