@@ -8,12 +8,21 @@ describe('reboundName', () => {
     // a save organiser renames on load. The name is the only place that
     // information lives, so it has to survive a round trip untouched.
     assert.equal(reboundName('Avant Margit.sl2'), 'Avant Margit.sl2');
-    assert.equal(reboundName('Avant Margit.savepack.zip'), 'Avant Margit.sl2');
     assert.equal(reboundName('ER0000.sl2.bak'), 'ER0000.sl2');
   });
 
-  it('copes with a name that has no extension', () => {
-    assert.equal(reboundName('save'), 'save.sl2');
+  it('leaves a name with no extension without one', () => {
+    // A save organiser moves the file to exactly the name typed in, extension
+    // and all, so a practice library is a list of bare names. Appending .sl2
+    // would single out every save that came back through here.
+    assert.equal(reboundName('03 BOSS 01 Abductors'), '03 BOSS 01 Abductors');
+  });
+
+  it('turns a pack name into a save name', () => {
+    // A pack is a container: unwrapping it yields a save, which is an .sl2 the
+    // sender never named themselves.
+    assert.equal(reboundName('Avant Margit.savepack.zip'), 'Avant Margit.sl2');
+    assert.equal(reboundName('Practice set.zip'), 'Practice set.sl2');
   });
 });
 

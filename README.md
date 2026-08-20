@@ -69,11 +69,14 @@ single `.sl2`, a pack of several to one zip holding them, each under its own nam
 ### Names are carried through
 
 Runners keep libraries of saves named after the point they practise — `Avant
-Margit.sl2` — and a save organiser renames on load, so that name is the only
-place the description lives. It survives the whole round trip untouched: packing
-`Avant Margit.sl2` records the name inside the manifest, and converting gives
-back `Avant Margit.sl2` even if the pack itself was renamed along the way.
-Nothing is appended.
+Margit` — and a save organiser renames on load, so that name is the only place
+the description lives. It survives the whole round trip untouched: packing
+`Avant Margit` records the name inside the manifest, and converting gives back
+`Avant Margit` even if the pack itself was renamed along the way. Nothing is
+appended, not even `.sl2`: an organiser stores a save under exactly the name
+typed into it, so a practice library is a list of bare names, and a converted
+save has to drop back into it without standing out. Only a `.savepack.zip`
+becomes an `.sl2`, having been a container rather than a save.
 
 About 94% of a packed save is one incompressible block of encrypted game
 regulation data, so 2 MB is close to the floor; the ten character slots account

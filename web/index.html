@@ -56,7 +56,10 @@
             <span class="step">1</span> <span data-t="step1"></span>
           </h2>
           <label id="drop" class="drop" for="file" tabindex="0">
-            <input id="file" type="file" accept=".sl2,.zip,.bak" hidden />
+            <!-- No accept filter: a save organiser stores saves under bare names, so an
+                 extension filter would hide the very files this takes. Format is decided
+                 by the BND4 signature, never by the name. -->
+            <input id="file" type="file" hidden />
             <span class="drop-text" data-t="dropHtml"></span>
             <span class="drop-hint" data-t="dropHint"></span>
           </label>
@@ -98,13 +101,7 @@
         <section>
           <p class="help" data-t="exportIntroHtml"></p>
           <label id="export-drop" class="drop" for="export-file" tabindex="0">
-            <input
-              id="export-file"
-              type="file"
-              accept=".sl2,.zip,.bak"
-              multiple
-              hidden
-            />
+            <input id="export-file" type="file" multiple hidden />
             <span class="drop-text" data-t="exportDropHtml"></span>
             <span class="drop-hint" data-t="exportDropHint"></span>
           </label>
