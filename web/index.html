@@ -55,14 +55,21 @@
           <h2 id="step-1">
             <span class="step">1</span> <span data-t="step1"></span>
           </h2>
-          <label id="drop" class="drop" for="file" tabindex="0">
+          <div id="drop" class="drop">
             <!-- No accept filter: a save organiser stores saves under bare names, so an
                  extension filter would hide the very files this takes. Format is decided
                  by the BND4 signature, never by the name. -->
             <input id="file" type="file" hidden />
             <span class="drop-text" data-t="dropHtml"></span>
-            <span class="drop-hint" data-t="dropHint"></span>
-          </label>
+            <span class="drop-hint">
+              <button
+                id="pick-file"
+                type="button"
+                class="pick"
+                data-t="pickFile"
+              ></button>
+            </span>
+          </div>
           <div id="file-report" class="report" hidden></div>
         </section>
 
@@ -122,11 +129,28 @@
       >
         <section>
           <p class="help" data-t="exportIntroHtml"></p>
-          <label id="export-drop" class="drop" for="export-file" tabindex="0">
+          <div id="export-drop" class="drop">
             <input id="export-file" type="file" multiple hidden />
+            <!-- A picker is one or the other: a folder here, plain files above,
+                 so the zone offers both rather than a second zone doing half. -->
+            <input id="export-folder" type="file" webkitdirectory hidden />
             <span class="drop-text" data-t="exportDropHtml"></span>
-            <span class="drop-hint" data-t="exportDropHint"></span>
-          </label>
+            <span class="drop-hint">
+              <button
+                id="export-pick-files"
+                type="button"
+                class="pick"
+                data-t="pickFiles"
+              ></button>
+              <span aria-hidden="true">·</span>
+              <button
+                id="export-pick-folder"
+                type="button"
+                class="pick"
+                data-t="pickFolder"
+              ></button>
+            </span>
+          </div>
           <div id="export-report" class="report" hidden></div>
         </section>
 

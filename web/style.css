@@ -482,3 +482,26 @@ button.ghost:hover:not(:disabled) {
 .skipped-list .save-name {
   display: block;
 }
+
+/* The picker buttons the drop zone offers. A quiet second way in: the zone
+   itself still opens the file picker when clicked anywhere else. */
+.drop .pick {
+  padding: 0.15rem 0.35rem;
+  border: none;
+  border-radius: 0.25rem;
+  background: none;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 400;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.drop .pick:hover {
+  color: var(--gold);
+}
+
+.drop .pick:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}

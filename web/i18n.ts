@@ -16,7 +16,7 @@ const EN = {
     "<strong>Your file never leaves this page.</strong> Everything runs in your browser — there is no server, and nothing is uploaded.",
   step1: "The file you were sent",
   dropHtml: "Drop a save, a <code>.savepack.zip</code> or a zip of saves here",
-  dropHint: "or click to choose a file",
+  pickFile: "Choose a file",
   step2: "Your Steam ID",
   steamIdHelpHtml:
     "It is the name of the folder holding your own save. Press <kbd>Win</kbd>+<kbd>R</kbd>, paste <code>%APPDATA%\\EldenRing</code>, press Enter: inside is a folder of 17 digits. Copy that name.",
@@ -39,7 +39,8 @@ const EN = {
   exportIntroHtml:
     "Packing a save turns 27.6 MB into about 2 MB, small enough to drop into a chat. Whoever receives it does not need this page: a raw save works just as well, it is only heavier to send.",
   exportDropHtml: "Drop your saves, or the folder holding them",
-  exportDropHint: "or click to choose files",
+  pickFiles: "Choose files",
+  pickFolder: "Choose a folder",
   noteLabel: "A note for whoever receives them (optional)",
   notePlaceholder: "RL1 Any%, post-Margit",
   exportButton: "Pack and download",
@@ -88,7 +89,7 @@ const FR: Translations = {
     "<strong>Votre fichier ne quitte jamais cette page.</strong> Tout s'exécute dans votre navigateur : aucun serveur, aucun envoi.",
   step1: "Le fichier reçu",
   dropHtml: "Déposez une sauvegarde, un <code>.savepack.zip</code> ou un zip de sauvegardes ici",
-  dropHint: "ou cliquez pour choisir un fichier",
+  pickFile: "Choisir un fichier",
   step2: "Votre identifiant Steam",
   steamIdHelpHtml:
     "C'est le nom du dossier qui contient votre propre sauvegarde. Appuyez sur <kbd>Win</kbd>+<kbd>R</kbd>, collez <code>%APPDATA%\\EldenRing</code>, validez : à l'intérieur se trouve un dossier de 17 chiffres. Copiez ce nom.",
@@ -111,7 +112,8 @@ const FR: Translations = {
   exportIntroHtml:
     "Compresser une sauvegarde fait passer 27,6 Mo à environ 2 Mo, assez léger pour un message. Celui qui la reçoit n'a pas besoin de cette page : une sauvegarde brute fonctionne aussi bien, elle est seulement plus lourde à envoyer.",
   exportDropHtml: "Déposez vos sauvegardes, ou le dossier qui les contient",
-  exportDropHint: "ou cliquez pour choisir des fichiers",
+  pickFiles: "Choisir des fichiers",
+  pickFolder: "Choisir un dossier",
   noteLabel: "Un mot pour ceux qui les recevront (facultatif)",
   notePlaceholder: "RL1 Any%, après Margit",
   exportButton: "Compresser et télécharger",

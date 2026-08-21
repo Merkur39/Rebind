@@ -17,7 +17,7 @@ import {
 
 const pick = <T extends HTMLElement>(selector: string) => document.querySelector<T>(selector)!;
 
-const dropZone = pick<HTMLLabelElement>('#drop');
+const dropZone = pick<HTMLDivElement>('#drop');
 const fileInput = pick<HTMLInputElement>('#file');
 const fileReport = pick<HTMLDivElement>('#file-report');
 const steamIdInput = pick<HTMLInputElement>('#steamid');
@@ -25,8 +25,9 @@ const steamIdError = pick<HTMLParagraphElement>('#steamid-error');
 const convertButton = pick<HTMLButtonElement>('#convert');
 const convertCancel = pick<HTMLButtonElement>('#convert-cancel');
 
-const exportDropZone = pick<HTMLLabelElement>('#export-drop');
+const exportDropZone = pick<HTMLDivElement>('#export-drop');
 const exportFileInput = pick<HTMLInputElement>('#export-file');
+const exportFolderInput = pick<HTMLInputElement>('#export-folder');
 const exportReport = pick<HTMLDivElement>('#export-report');
 const noteInput = pick<HTMLInputElement>('#note');
 const exportButton = pick<HTMLButtonElement>('#export');
@@ -458,8 +459,29 @@ async function droppedFiles(transfer: DataTransfer | null): Promise<File[]> {
   return files.sort((a, b) => a.name.localeCompare(b.name));
 }
 
-/** Drag and drop, click and keyboard, for one drop zone. */
-function wireDropZone(zone: HTMLElement, input: HTMLInputElement, onFiles: (files: File[]) => void): void {
+/**
+ * What a picker hands over. A folder picker fills in the path each file was
+ * found at, which is the half of a practice library that its names do not say,
+ * so the file is renamed by it — pointing at the same bytes, nothing copied.
+ */
+function chosenFiles(input: HTMLInputElement): File[] {
+  const files = [...(input.files ?? [])].map((file) => {
+    const path = file.webkitRelativePath;
+    return !path || path === file.name
+      ? file
+      : new File([file], path, { lastModified: file.lastModified });
+  });
+  // Cleared so that choosing the same folder twice running is heard twice.
+  input.value = '';
+  return files.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/** Drag and drop, and the pickers the zone offers, for one drop zone. */
+function wireDropZone(
+  zone: HTMLElement,
+  pickers: readonly HTMLInputElement[],
+  onFiles: (files: File[]) => void,
+): void {
   for (const event of ['dragenter', 'dragover'] as const) {
     zone.addEventListener(event, (dragEvent) => {
       dragEvent.preventDefault();
@@ -475,20 +497,28 @@ function wireDropZone(zone: HTMLElement, input: HTMLInputElement, onFiles: (file
       if (files.length > 0) onFiles(files);
     });
   });
-  zone.addEventListener('keydown', (keyEvent) => {
-    if (keyEvent.key === 'Enter' || keyEvent.key === ' ') {
-      keyEvent.preventDefault();
-      input.click();
-    }
+  // Clicking the zone anywhere but on what it holds is a shortcut to the first
+  // picker; the buttons are what a keyboard reaches, being buttons. The hidden
+  // inputs count as what it holds: opening one dispatches a click of its own,
+  // which bubbles back up here and would open the other.
+  zone.addEventListener('click', (clickEvent) => {
+    if (!(clickEvent.target as HTMLElement).closest('button, input')) pickers[0]!.click();
   });
-  input.addEventListener('change', () => {
-    const files = [...(input.files ?? [])];
-    if (files.length > 0) onFiles(files);
-  });
+
+  for (const picker of pickers) {
+    picker.addEventListener('change', () => {
+      const files = chosenFiles(picker);
+      if (files.length > 0) onFiles(files);
+    });
+  }
 }
 
-wireDropZone(dropZone, fileInput, (files) => void loadFile(files[0]!));
-wireDropZone(exportDropZone, exportFileInput, (files) => void loadFilesToPack(files));
+wireDropZone(dropZone, [fileInput], (files) => void loadFile(files[0]!));
+wireDropZone(exportDropZone, [exportFileInput, exportFolderInput], (files) => void loadFilesToPack(files));
+
+pick<HTMLButtonElement>('#pick-file').addEventListener('click', () => fileInput.click());
+pick<HTMLButtonElement>('#export-pick-files').addEventListener('click', () => exportFileInput.click());
+pick<HTMLButtonElement>('#export-pick-folder').addEventListener('click', () => exportFolderInput.click());
 
 steamIdInput.addEventListener('input', refreshButtons);
 convertButton.addEventListener('click', () => void convert());
