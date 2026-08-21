@@ -124,6 +124,16 @@ kbd {
   border-color: var(--bad);
 }
 
+/* A library runs to fifty saves, and fifty cards would bury the field and the
+   button under it beneath a page of scrolling — as true of a pack received as of
+   a folder shared. The list scrolls inside itself instead, and the scroll stops
+   at its edge rather than carrying on down the page. */
+.report {
+  max-height: 580px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
 .report p {
   margin: 0 0 0.35rem;
 }
