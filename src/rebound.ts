@@ -1,5 +1,5 @@
 import type { Incoming } from './incoming.ts';
-import { bundleName, reboundName } from './naming.ts';
+import { bundleName, leaf, reboundName } from './naming.ts';
 import { uniqueName, type SkippedSave } from './pack.ts';
 import { rebindToSteamId } from './sl2/rebind.ts';
 import { openZip } from './zip.ts';
@@ -61,5 +61,13 @@ export function rebindIncoming(
   const skipped = incoming.skipped;
   return zip
     ? { bytes: zip.finish(), name: bundleName(fileName), bundled: true, saves, skipped }
-    : { bytes: only!, name: saves[0]!.name, bundled: false, saves, skipped };
+    : {
+        bytes: only!,
+        // A lone file is downloaded as itself, and a download name cannot carry a
+        // path: the browser would flatten it into the name.
+        name: leaf(saves[0]!.name),
+        bundled: false,
+        saves,
+        skipped,
+      };
 }

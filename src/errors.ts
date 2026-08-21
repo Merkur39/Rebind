@@ -11,6 +11,8 @@ export type ErrorCode =
   | 'truncated'
   | 'no-profile-block'
   | 'save-corrupted'
+  | 'no-save-in-archive'
+  | 'unsafe-name'
   | 'not-an-archive'
   | 'pack-unreadable-manifest'
   | 'pack-wrong-format'

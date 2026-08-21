@@ -196,3 +196,98 @@ describe('a save whose own digests no longer match', () => {
     assert.throws(() => readIncoming(altered(), at), /damaged|checksum/i);
   });
 });
+
+describe('an archive of saves', () => {
+  const tree = () =>
+    zipSync({
+      'DP/03 - SKIP/01 SKIP 01 Sellia': margit(),
+      'DP/02 - BOSS/03 BOSS 01 Abductors': radahn(),
+    });
+
+  it('is read as the saves it holds, each under the path it sat at', () => {
+    const incoming = readIncoming(tree(), at);
+
+    assert.equal(incoming.kind, 'archive');
+    assert.deepEqual(
+      incoming.saves.map((save) => save.fileName),
+      ['DP/03 - SKIP/01 SKIP 01 Sellia', 'DP/02 - BOSS/03 BOSS 01 Abductors'],
+    );
+    assert.deepEqual(
+      incoming.saves.map((save) => save.steamId),
+      [owner, A_THIRD_PARTY],
+    );
+  });
+
+  it('is described without being kept, like a pack is', () => {
+    const summary = summariseIncoming(tree(), at);
+
+    assert.equal(summary.kind, 'archive');
+    assert.deepEqual(
+      summary.saves.map((save) => [save.fileName, save.size]),
+      [
+        ['DP/03 - SKIP/01 SKIP 01 Sellia', margit().length],
+        ['DP/02 - BOSS/03 BOSS 01 Abductors', radahn().length],
+      ],
+    );
+    assert.ok(summary.saves.every((save) => !('save' in save)));
+  });
+
+  it('leaves out what is not a save, and names it', () => {
+    const bytes = zipSync({
+      'lisez-moi.txt': new TextEncoder().encode('rien à voir'),
+      'saves/one': margit(),
+    });
+
+    const incoming = readIncoming(bytes, at);
+
+    assert.deepEqual(
+      incoming.saves.map((save) => save.fileName),
+      ['saves/one'],
+    );
+    assert.deepEqual(
+      incoming.skipped.map((save) => [save.fileName, save.code]),
+      [['lisez-moi.txt', 'not-a-save']],
+    );
+  });
+
+  it('refuses a name that would climb out of the folder it unpacks into', () => {
+    const bytes = zipSync({ '../ailleurs/one': margit(), 'saves/two': radahn() });
+
+    const incoming = readIncoming(bytes, at);
+
+    assert.deepEqual(
+      incoming.saves.map((save) => save.fileName),
+      ['saves/two'],
+    );
+    assert.deepEqual(
+      incoming.skipped.map((save) => save.code),
+      ['unsafe-name'],
+    );
+  });
+
+  it('says nothing of the folders a zip records, having nothing to say', () => {
+    const bytes = zipSync({ 'DP/': new Uint8Array(0), 'DP/one': margit() });
+
+    const incoming = readIncoming(bytes, at);
+
+    assert.equal(incoming.saves.length, 1);
+    assert.deepEqual(incoming.skipped, []);
+  });
+
+  it('is refused outright when it holds no save at all', () => {
+    const bytes = zipSync({ 'lisez-moi.txt': new TextEncoder().encode('rien') });
+
+    assert.throws(() => readIncoming(bytes, at), /no Elden Ring save|aucune sauvegarde/i);
+  });
+
+  it('counts its way through, so a caller can show where it is', () => {
+    const steps: string[] = [];
+
+    readIncoming(tree(), at, (done, total, name) => steps.push(`${done}/${total} ${name}`));
+
+    assert.deepEqual(steps, [
+      '1/2 DP/03 - SKIP/01 SKIP 01 Sellia',
+      '2/2 DP/02 - BOSS/03 BOSS 01 Abductors',
+    ]);
+  });
+});

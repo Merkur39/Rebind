@@ -111,11 +111,7 @@ function sharingError(failure: Failure): string {
  * hears of it: the report drawn when the file was dropped came from the
  * manifest, which is the sender's word rather than the bytes'.
  */
-function showSkipped(strip: Strip, skipped: readonly SkippedSave[]): void {
-  if (skipped.length === 0) {
-    strip.skipped.hidden = true;
-    return;
-  }
+function skippedList(skipped: readonly SkippedSave[]): string {
   const items = skipped
     .map(
       (save) =>
@@ -124,11 +120,18 @@ function showSkipped(strip: Strip, skipped: readonly SkippedSave[]): void {
         )}</li>`,
     )
     .join('');
-  show(
-    strip.skipped,
-    `<p class="skipped-head">${escape(t().skipped(skipped.length))}</p>
-     <ul class="skipped-list">${items}</ul>`,
-  );
+  return `<div class="skipped">
+     <p class="skipped-head">${escape(t().skipped(skipped.length))}</p>
+     <ul class="skipped-list">${items}</ul>
+   </div>`;
+}
+
+function showSkipped(strip: Strip, skipped: readonly SkippedSave[]): void {
+  if (skipped.length === 0) {
+    strip.skipped.hidden = true;
+    return;
+  }
+  show(strip.skipped, skippedList(skipped));
 }
 
 /** The Steam ID typed in, or null with the reason shown to the user. */
@@ -168,7 +171,12 @@ function refreshButtons(): void {
 
 function describe(incoming: IncomingSummary, name: string): string {
   const total = incoming.saves.reduce((bytes, entry) => bytes + entry.size, 0);
-  const kind = incoming.kind === 'savepack' ? t().savepack : t().saveFile;
+  const kind =
+    incoming.kind === 'savepack'
+      ? t().savepack
+      : incoming.kind === 'archive'
+        ? t().archive
+        : t().saveFile;
   const count = incoming.saves.length > 1 ? ` · ${t().saveCount(incoming.saves.length)}` : '';
   const note = incoming.note ? `<p class="note">“${escape(incoming.note)}”</p>` : '';
 
@@ -191,10 +199,15 @@ function describe(incoming: IncomingSummary, name: string): string {
     })
     .join('');
 
+  // An archive says what it is leaving out the moment it is read, and saying so
+  // here spares a reader wondering why the list is shorter than the zip.
+  const ignored = incoming.skipped.length === 0 ? '' : skippedList(incoming.skipped);
+
   return `
     <p class="filename">${escape(name)} <span class="muted">· ${escape(kind)}${count} · ${formatSize(total)}</span></p>
     ${note}
-    <ol class="saves">${bodies}</ol>`;
+    <ol class="saves">${bodies}</ol>
+    ${ignored}`;
 }
 
 function redrawReports(): void {

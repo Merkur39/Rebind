@@ -2,7 +2,12 @@
 import { codeOf, type ErrorCode } from '../src/errors.ts';
 import { packName } from '../src/naming.ts';
 import { openPack, type SkippedSave } from '../src/pack.ts';
-import { readIncoming, summariseIncoming, type IncomingSummary } from '../src/incoming.ts';
+import {
+  readIncoming,
+  summariseIncoming,
+  type IncomingSummary,
+  type OnEntry,
+} from '../src/incoming.ts';
 import { rebindIncoming, type ReboundSave } from '../src/rebound.ts';
 
 /**
@@ -75,13 +80,16 @@ function failureOf(file: string, error: unknown): Failure {
   };
 }
 
+/** Reading an archive is many steps rather than one, so it counts them out. */
+const counting: OnEntry = (done, total, name) => post({ kind: 'progress', done, total, name });
+
 async function read(file: File) {
-  return readIncoming(new Uint8Array(await file.arrayBuffer()), new Date(file.lastModified));
+  return readIncoming(new Uint8Array(await file.arrayBuffer()), new Date(file.lastModified), counting);
 }
 
 /** Reads only what it takes to describe the file, not what it holds. */
 async function skim(file: File) {
-  return summariseIncoming(new Uint8Array(await file.arrayBuffer()), new Date(file.lastModified));
+  return summariseIncoming(new Uint8Array(await file.arrayBuffer()), new Date(file.lastModified), counting);
 }
 
 async function inspect(files: readonly File[]): Promise<void> {

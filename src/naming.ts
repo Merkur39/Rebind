@@ -31,7 +31,7 @@ export function reboundName(fileName: string): string {
  * archive can put them back, but the archive itself is one file: a slash in a
  * download name is not one a browser keeps.
  */
-function leaf(fileName: string): string {
+export function leaf(fileName: string): string {
   return fileName.slice(fileName.lastIndexOf('/') + 1);
 }
 

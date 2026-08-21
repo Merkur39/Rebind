@@ -15,7 +15,7 @@ const EN = {
   privacyHtml:
     "<strong>Your file never leaves this page.</strong> Everything runs in your browser — there is no server, and nothing is uploaded.",
   step1: "The file you were sent",
-  dropHtml: "Drop a save or a <code>.savepack.zip</code> here",
+  dropHtml: "Drop a save, a <code>.savepack.zip</code> or a zip of saves here",
   dropHint: "or click to choose a file",
   step2: "Your Steam ID",
   steamIdHelpHtml:
@@ -26,6 +26,7 @@ const EN = {
   fromAccount: "From Steam account",
   saveFile: "save file",
   savepack: "savepack",
+  archive: "archive of saves",
   unreadable: "This file could not be read.",
   notDigits: "A Steam ID is 17 digits, nothing else.",
   conversionFailed: "Rebinding failed",
@@ -37,7 +38,7 @@ const EN = {
   tabExport: "Share my saves",
   exportIntroHtml:
     "Packing a save turns 27.6 MB into about 2 MB, small enough to drop into a chat. Whoever receives it does not need this page: a raw save works just as well, it is only heavier to send.",
-  exportDropHtml: "Drop saves, or a folder of them, here",
+  exportDropHtml: "Drop your saves, or the folder holding them",
   exportDropHint: "or click to choose files",
   noteLabel: "A note for whoever receives them (optional)",
   notePlaceholder: "RL1 Any%, post-Margit",
@@ -86,7 +87,7 @@ const FR: Translations = {
   privacyHtml:
     "<strong>Votre fichier ne quitte jamais cette page.</strong> Tout s'exécute dans votre navigateur : aucun serveur, aucun envoi.",
   step1: "Le fichier reçu",
-  dropHtml: "Déposez une sauvegarde ou un <code>.savepack.zip</code> ici",
+  dropHtml: "Déposez une sauvegarde, un <code>.savepack.zip</code> ou un zip de sauvegardes ici",
   dropHint: "ou cliquez pour choisir un fichier",
   step2: "Votre identifiant Steam",
   steamIdHelpHtml:
@@ -97,6 +98,7 @@ const FR: Translations = {
   fromAccount: "Depuis le compte Steam",
   saveFile: "fichier de sauvegarde",
   savepack: "savepack",
+  archive: "archive de sauvegardes",
   unreadable: "Ce fichier n'a pas pu être lu.",
   notDigits: "Un identifiant Steam fait 17 chiffres, rien d’autre.",
   conversionFailed: "Échec de la réaffectation",
@@ -108,7 +110,7 @@ const FR: Translations = {
   tabExport: "Partager mes sauvegardes",
   exportIntroHtml:
     "Compresser une sauvegarde fait passer 27,6 Mo à environ 2 Mo, assez léger pour un message. Celui qui la reçoit n'a pas besoin de cette page : une sauvegarde brute fonctionne aussi bien, elle est seulement plus lourde à envoyer.",
-  exportDropHtml: "Déposez des sauvegardes, ou un dossier, ici",
+  exportDropHtml: "Déposez vos sauvegardes, ou le dossier qui les contient",
   exportDropHint: "ou cliquez pour choisir des fichiers",
   noteLabel: "Un mot pour ceux qui les recevront (facultatif)",
   notePlaceholder: "RL1 Any%, après Margit",
@@ -158,6 +160,9 @@ const ERRORS: Record<Language, Record<ErrorCode, string>> = {
     "no-profile-block": "This save has no profile block.",
     "save-corrupted":
       "This save is damaged — its own checksums do not match, and the game would turn it down.",
+    "no-save-in-archive": "This archive holds no Elden Ring save.",
+    "unsafe-name":
+      "This entry would be unpacked outside the folder it was extracted into.",
     "not-an-archive": "This file is not a savepack.",
     "pack-unreadable-manifest": "This savepack has an unreadable manifest.",
     "pack-wrong-format": "This savepack was made by a newer version of Rebind.",
@@ -181,6 +186,9 @@ const ERRORS: Record<Language, Record<ErrorCode, string>> = {
     "no-profile-block": "Cette sauvegarde ne contient pas de bloc profil.",
     "save-corrupted":
       "Cette sauvegarde est abîmée — ses propres empreintes ne correspondent pas, le jeu la refuserait.",
+    "no-save-in-archive": "Cette archive ne contient aucune sauvegarde Elden Ring.",
+    "unsafe-name":
+      "Cette entrée serait extraite hors du dossier de destination.",
     "not-an-archive": "Ce fichier n'est pas un savepack.",
     "pack-unreadable-manifest": "Le manifeste de ce savepack est illisible.",
     "pack-wrong-format":

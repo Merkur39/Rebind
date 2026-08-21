@@ -142,3 +142,31 @@ describe('rebindIncoming, on a pack that came through damaged', () => {
     );
   });
 });
+
+describe('rebindIncoming, on one save that sat in folders', () => {
+  it('hands it back under its own name, the folders having nowhere to go', () => {
+    // A lone file is downloaded as itself, and a download name cannot hold a
+    // path — the browser flattens it to DP_03 - SKIP_… if you try.
+    const archive = zipSync({ 'DP/03 - SKIP/Avant Margit': margit() });
+
+    const rebound = rebindIncoming(readIncoming(archive, at), 'DP.zip', A_RECIPIENT, at);
+
+    assert.equal(rebound.bundled, false);
+    assert.equal(rebound.name, 'Avant Margit');
+  });
+
+  it('keeps the folders when there are several, the zip having room for them', () => {
+    const archive = zipSync({
+      'DP/03 - SKIP/Avant Margit': margit(),
+      'DP/02 - BOSS/Avant Radahn': radahn(),
+    });
+
+    const rebound = rebindIncoming(readIncoming(archive, at), 'DP.zip', A_RECIPIENT, at);
+
+    assert.equal(rebound.bundled, true);
+    assert.deepEqual(Object.keys(unzipSync(rebound.bytes)).sort(), [
+      'DP/02 - BOSS/Avant Radahn',
+      'DP/03 - SKIP/Avant Margit',
+    ]);
+  });
+});

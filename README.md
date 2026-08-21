@@ -43,31 +43,37 @@ own**.
 
 ### Receiving
 
-1. **Their save.** Drop the `ER0000.sl2` or `.savepack.zip` you were sent. Its
-   characters, levels and playtimes are shown before anything is converted, so
-   you can check you got what you expected.
+1. **Their save.** Drop the `ER0000.sl2`, `.savepack.zip` or plain zip you were
+   sent. Its characters, levels and playtimes are shown before anything is
+   converted, so you can check you got what you expected.
 2. **Your Steam ID.** It is the name of the folder holding your own save: press
    <kbd>Win</kbd>+<kbd>R</kbd>, paste `%APPDATA%\EldenRing`, press Enter — inside
    is a folder of 17 digits. It is remembered for next time.
 3. **Convert.** The file downloads under its original name; drop it in your save
    organiser library.
 
-A raw `ER0000.sl2` is accepted as readily as a `.savepack.zip`, so whoever shares a
-save does not need anything at all.
+A raw `ER0000.sl2` is accepted as readily as a `.savepack.zip`, and so is an
+ordinary zip of saves — what somebody without this page ends up sending, or what
+Windows makes of a practice folder. Whoever shares a save needs nothing at all.
+Entries that are not saves are named and left out; a zip holding none is turned
+away. Saves come back at the path they sat at, and a name climbing out of the
+folder it unpacks into is refused rather than passed on.
 
 ### Sharing
 
-Drop saves in the second tab — or the folder holding them, subfolders and all —
-optionally add a note, and get a single `.savepack.zip` holding them: 27.6 MB per
-save becomes about 2 MB, and a practice library travels as one attachment rather
-than one download per file. Files that fail to parse are reported and skipped
-rather than stopping the batch, and a `.savepack.zip` dropped here is turned away:
-it is what this tab makes, and unpacking one to pack it again would only cost it
-its note and its date.
+Drop saves in the second tab — or the folder holding them, subfolders and all, or
+a zip of either — optionally add a note, and get a single `.savepack.zip` holding
+them: 27.6 MB per save becomes about 2 MB, and a practice library travels as one
+attachment rather than one download per file. Files that fail to parse are
+reported and skipped rather than stopping the batch, and a `.savepack.zip` dropped
+here is turned away: it is what this tab makes, and unpacking one to pack it
+again would only cost it its note and its date.
 
-A dropped folder keeps its shape. Saves go into the pack under the path they were
-found at, and come back out at the same path when the pack is converted, so a
-library that took a year to arrange is still arranged at the other end.
+A dropped folder keeps its shape, and so does a zip's. Saves go into the pack
+under the path they were found at, and come back out at the same path when the
+pack is converted, so a library that took a year to arrange is still arranged at
+the other end. A lone save is downloaded under its own name, a download name
+having nowhere to put a path.
 
 A pack of one takes that save’s name; a pack of several is dated, having no name
 in common. Receiving works the same way in reverse: a pack of one converts to a
