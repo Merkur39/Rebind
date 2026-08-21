@@ -50,6 +50,30 @@ describe('createPack', () => {
     );
   });
 
+  it('keeps a folder a save sits in, and numbers only the name', () => {
+    // A dropped folder arrives as paths, and a dot in a folder name is not the
+    // start of an extension.
+    const pack = createPack(
+      [
+        { save: margit(), fileName: 'DP/03 - SKIP/ER0000.sl2' },
+        { save: radahn(), fileName: 'DP/03 - SKIP/ER0000.sl2' },
+        { save: margit(), fileName: 'v1.2/Avant Margit' },
+        { save: radahn(), fileName: 'v1.2/Avant Margit' },
+      ],
+      { now: at },
+    );
+
+    assert.deepEqual(
+      readPack(pack).saves.map((entry) => entry.fileName),
+      [
+        'DP/03 - SKIP/ER0000.sl2',
+        'DP/03 - SKIP/ER0000-2.sl2',
+        'v1.2/Avant Margit',
+        'v1.2/Avant Margit-2',
+      ],
+    );
+  });
+
   it('keeps the note the sender wrote, once for the whole pack', () => {
     const { manifest } = readPack(createPack(two(), { note: 'Practice set', now: at }));
 

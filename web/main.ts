@@ -4,6 +4,7 @@ import type { IncomingSummary } from '../src/incoming.ts';
 import type { SkippedSave } from '../src/pack.ts';
 import { assertSteamId } from '../src/sl2/rebind.ts';
 import { UI, errorMessage, pickLanguage, type Language } from './i18n.ts';
+import type { Failure } from './jobs.worker.ts';
 import {
   Cancelled,
   cancelJob,
@@ -94,6 +95,17 @@ function readableError(error: unknown): string {
 }
 
 /**
+ * The same failure, said the way the sharing tab has to say it. Two of the
+ * codes answer "this is not a savepack", which was the useful thing to hear
+ * back when this tab took one; it no longer does, so they would send a reader
+ * looking for the wrong file entirely.
+ */
+function sharingError(failure: Failure): string {
+  const misleading = failure.code === 'pack-missing-manifest' || failure.code === 'neither-format';
+  return misleading ? `${failure.file} — ${t().notASave}` : readableError(failure);
+}
+
+/**
  * What a file could not hand over, listed under the line that says what it did.
  * Reading the saves is what proves them sound, so this is the first the user
  * hears of it: the report drawn when the file was dropped came from the
@@ -118,7 +130,6 @@ function showSkipped(strip: Strip, skipped: readonly SkippedSave[]): void {
      <ul class="skipped-list">${items}</ul>`,
   );
 }
-
 
 /** The Steam ID typed in, or null with the reason shown to the user. */
 function currentSteamId(): bigint | null {
@@ -257,23 +268,32 @@ async function loadFilesToPack(files: readonly File[]): Promise<void> {
   const read = await working(exportStrip, () => inspectFiles(files, onProgress));
   if (!read) return;
 
+  // A savepack is what this tab makes. Taking one back would unpack it only to
+  // pack it again, under a new date and without the note it came with.
+  const packed = read.good.filter((entry) => entry.summary.kind === 'savepack');
+
   // The worker keeps no bytes and neither does the page: each file is read
   // again, one at a time, when the pack is actually written.
-  toPack = read.good.map((entry) => ({
-    file: files[entry.index]!,
-    name: entry.name,
-    summary: entry.summary,
-  }));
+  toPack = read.good
+    .filter((entry) => entry.summary.kind !== 'savepack')
+    .map((entry) => ({
+      file: files[entry.index]!,
+      name: entry.name,
+      summary: entry.summary,
+    }));
 
-  const problems = read.bad
-    .map((failure) => `<p class="error">${escape(readableError(failure))}</p>`)
+  const problems = [
+    ...read.bad.map(sharingError),
+    ...packed.map((entry) => `${entry.name} — ${t().alreadyPacked(t().tabConvert)}`),
+  ]
+    .map((line) => `<p class="error">${escape(line)}</p>`)
     .join('');
   if (toPack.length === 0) {
     show(exportReport, problems || `<p class="error">${escape(t().unreadable)}</p>`);
     exportReport.classList.add('bad');
   } else {
     show(exportReport, problems + toPack.map((entry) => describe(entry.summary, entry.name)).join('<hr />'));
-    exportReport.classList.toggle('bad', read.bad.length > 0);
+    exportReport.classList.toggle('bad', read.bad.length + packed.length > 0);
   }
   refreshButtons();
 }
@@ -381,6 +401,50 @@ function applyLanguage(): void {
   }
 }
 
+/**
+ * Every file under a dropped entry, each named by the path it was found at. A
+ * practice library is a tree of folders, and the tree is half of what the names
+ * say, so it travels into the pack rather than being flattened away. Renaming a
+ * File this way costs nothing: the new one points at the same bytes on disk.
+ */
+async function filesUnder(entry: FileSystemEntry): Promise<File[]> {
+  const path = entry.fullPath.replace(/^\//, '');
+
+  if (entry.isFile) {
+    const file = await new Promise<File>((resolve, reject) =>
+      (entry as FileSystemFileEntry).file(resolve, reject),
+    );
+    return [path === file.name ? file : new File([file], path, { lastModified: file.lastModified })];
+  }
+
+  const reader = (entry as FileSystemDirectoryEntry).createReader();
+  const found: File[] = [];
+  // readEntries hands back one page at a time, and an empty page is the end.
+  for (;;) {
+    const page = await new Promise<FileSystemEntry[]>((resolve, reject) =>
+      reader.readEntries(resolve, reject),
+    );
+    if (page.length === 0) break;
+    for (const child of page) found.push(...(await filesUnder(child)));
+  }
+  return found;
+}
+
+/** What was dropped, folders walked through, in a settled order. */
+async function droppedFiles(transfer: DataTransfer | null): Promise<File[]> {
+  // The entries have to be taken while the event is still being handled: the
+  // transfer is emptied the moment the handler returns.
+  const entries = [...(transfer?.items ?? [])]
+    .map((item) => item.webkitGetAsEntry())
+    .filter((entry): entry is FileSystemEntry => entry !== null);
+  if (entries.length === 0) return [...(transfer?.files ?? [])];
+
+  const files = (await Promise.all(entries.map(filesUnder))).flat();
+  // A directory reader answers in no particular order; a library should pack in
+  // the order it reads on screen.
+  return files.sort((a, b) => a.name.localeCompare(b.name));
+}
+
 /** Drag and drop, click and keyboard, for one drop zone. */
 function wireDropZone(zone: HTMLElement, input: HTMLInputElement, onFiles: (files: File[]) => void): void {
   for (const event of ['dragenter', 'dragover'] as const) {
@@ -394,8 +458,9 @@ function wireDropZone(zone: HTMLElement, input: HTMLInputElement, onFiles: (file
   }
   zone.addEventListener('drop', (dragEvent) => {
     dragEvent.preventDefault();
-    const files = [...(dragEvent.dataTransfer?.files ?? [])];
-    if (files.length > 0) onFiles(files);
+    void droppedFiles(dragEvent.dataTransfer).then((files) => {
+      if (files.length > 0) onFiles(files);
+    });
   });
   zone.addEventListener('keydown', (keyEvent) => {
     if (keyEvent.key === 'Enter' || keyEvent.key === ' ') {

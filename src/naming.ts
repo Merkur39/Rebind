@@ -27,16 +27,25 @@ export function reboundName(fileName: string): string {
 }
 
 /**
+ * The last segment of a name. A save carries the folders it sat in so an
+ * archive can put them back, but the archive itself is one file: a slash in a
+ * download name is not one a browser keeps.
+ */
+function leaf(fileName: string): string {
+  return fileName.slice(fileName.lastIndexOf('/') + 1);
+}
+
+/**
  * The name of a pack built from a batch. A single save lends the pack its own
  * name; several have no common one, so the pack is dated instead.
  */
 export function packName(fileNames: readonly string[], now: Date): string {
-  const only = fileNames.length === 1 ? baseName(fileNames[0]!) : '';
+  const only = fileNames.length === 1 ? baseName(leaf(fileNames[0]!)) : '';
   const stem = only || `elden-ring-${now.toISOString().slice(0, 10)}`;
   return `${stem}${PACK_EXTENSION}`;
 }
 
 /** The name of the zip holding several converted saves. */
 export function bundleName(packFileName: string): string {
-  return `${baseName(packFileName)}.zip`;
+  return `${baseName(leaf(packFileName))}.zip`;
 }

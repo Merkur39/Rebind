@@ -71,7 +71,9 @@ export interface SkippedSave {
  */
 export function uniqueName(used: Set<string>, fileName: string | undefined): string {
   const wanted = fileName?.trim() || SAVE_FILE_NAME;
-  const dot = wanted.lastIndexOf('.');
+  // A name can be a path — a dropped folder keeps its shape inside the archive —
+  // and a dot in a folder is not the start of an extension.
+  const dot = wanted.lastIndexOf('.') > wanted.lastIndexOf('/') ? wanted.lastIndexOf('.') : -1;
   const [stem, extension] = dot > 0 ? [wanted.slice(0, dot), wanted.slice(dot)] : [wanted, ''];
 
   let candidate = wanted;

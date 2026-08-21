@@ -57,10 +57,17 @@ save does not need anything at all.
 
 ### Sharing
 
-Drop one or more `ER0000.sl2` in the second tab, optionally add a note, and get a
-single `.savepack.zip` holding them all: 27.6 MB per save becomes about 2 MB, and
-a practice library travels as one attachment rather than one download per file.
-Files that fail to parse are reported and skipped rather than stopping the batch.
+Drop saves in the second tab — or the folder holding them, subfolders and all —
+optionally add a note, and get a single `.savepack.zip` holding them: 27.6 MB per
+save becomes about 2 MB, and a practice library travels as one attachment rather
+than one download per file. Files that fail to parse are reported and skipped
+rather than stopping the batch, and a `.savepack.zip` dropped here is turned away:
+it is what this tab makes, and unpacking one to pack it again would only cost it
+its note and its date.
+
+A dropped folder keeps its shape. Saves go into the pack under the path they were
+found at, and come back out at the same path when the pack is converted, so a
+library that took a year to arrange is still arranged at the other end.
 
 A pack of one takes that save’s name; a pack of several is dated, having no name
 in common. Receiving works the same way in reverse: a pack of one converts to a

@@ -37,7 +37,7 @@ const EN = {
   tabExport: "Share my saves",
   exportIntroHtml:
     "Packing a save turns 27.6 MB into about 2 MB, small enough to drop into a chat. Whoever receives it does not need this page: a raw save works just as well, it is only heavier to send.",
-  exportDropHtml: "Drop one or more saves here",
+  exportDropHtml: "Drop saves, or a folder of them, here",
   exportDropHint: "or click to choose files",
   noteLabel: "A note for whoever receives them (optional)",
   notePlaceholder: "RL1 Any%, post-Margit",
@@ -50,6 +50,10 @@ const EN = {
   rebinding: (done: number, total: number, name: string) =>
     `Rebinding ${done} / ${total} — ${name}`,
   cancel: "Cancel",
+  alreadyPacked: (tab: string) =>
+    `this is already a savepack — drop it in the “${tab}” tab`,
+  notASave:
+    "this is not an Elden Ring save — drop the saves themselves, or the folder holding them",
   skipped: (count: number) => `${count} save${count === 1 ? "" : "s"} skipped:`,
   cancelled: "Cancelled.",
   saveCount: (count: number) => `${count} saves`,
@@ -104,7 +108,7 @@ const FR: Translations = {
   tabExport: "Partager mes sauvegardes",
   exportIntroHtml:
     "Compresser une sauvegarde fait passer 27,6 Mo à environ 2 Mo, assez léger pour un message. Celui qui la reçoit n'a pas besoin de cette page : une sauvegarde brute fonctionne aussi bien, elle est seulement plus lourde à envoyer.",
-  exportDropHtml: "Déposez une ou plusieurs sauvegardes ici",
+  exportDropHtml: "Déposez des sauvegardes, ou un dossier, ici",
   exportDropHint: "ou cliquez pour choisir des fichiers",
   noteLabel: "Un mot pour ceux qui les recevront (facultatif)",
   notePlaceholder: "RL1 Any%, après Margit",
@@ -117,6 +121,10 @@ const FR: Translations = {
   rebinding: (done: number, total: number, name: string) =>
     `Réaffectation ${done} / ${total} — ${name}`,
   cancel: "Annuler",
+  alreadyPacked: (tab: string) =>
+    `c'est déjà un savepack — déposez-le dans l'onglet « ${tab} »`,
+  notASave:
+    "ce n'est pas une sauvegarde Elden Ring — déposez les sauvegardes elles-mêmes, ou le dossier qui les contient",
   skipped: (count: number) =>
     `${count} sauvegarde${count > 1 ? "s" : ""} ignorée${count > 1 ? "s" : ""} :`,
   cancelled: "Annulé.",
