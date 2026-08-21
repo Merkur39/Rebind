@@ -108,8 +108,23 @@ carries a note and the character list.
 }
 ```
 
-Its SHA-256 is checked on read, so a truncated download is caught rather than
-handed to the game.
+Its SHA-256 is checked when the save itself is read — converting it, or packing
+it again — so a truncated download is caught rather than handed to the game.
+Dropping a pack in only reads the manifest, which is why a pack of fifty lists
+itself instantly instead of inflating 1.4 GB to draw one page of description; the
+list you see is what the sender recorded, and the bytes answer for themselves
+before anything is produced from them.
+
+A save that fails that check is left out rather than taking the others down with
+it: nineteen of twenty are still worth having, and the ones left out are named,
+with the reason, under the line that says what came through. A pack with nothing
+readable left in it fails outright.
+
+A save also carries twelve MD5 digests of its own, one per block, and those are
+the ones the game checks. They are verified whenever a save is read, packed or
+not, so a file the game would turn down is turned down here first — a rebind
+would otherwise recompute all twelve and hand back something structurally sound
+made of damaged bytes. It costs about 80 ms per save, in the worker.
 
 ## Limits
 
@@ -169,6 +184,16 @@ domain and from a subdirectory.
 `src/` is the save handling and imports nothing from Node, so it runs unchanged
 in the browser; `web/` is the page around it, with its translations in
 `web/i18n.ts`.
+
+None of that work happens on the page's own thread. `web/jobs.worker.ts` reads,
+rebinds and packs; `web/jobs.ts` is the page's side of it, one worker for every
+job, cancelled by killing it. Hashing and deflating ten saves is four seconds of
+solid work and fifty are twenty, which is a frozen page either way. Files cross
+to the worker as handles rather than bytes — a `File` survives the structured
+clone by reference — so a save is read only when its turn comes and let go right
+after; the page keeps names and character summaries, never the 27.6 MB behind
+them. Both archives this tool downloads are written entry by entry through
+`src/zip.ts` for the same reason.
 
 Every failure the user can see carries a stable code from `src/errors.ts`, so the
 page can phrase it in either language; the English message stays as the fallback

@@ -1,11 +1,18 @@
 import { codeOf } from '../src/errors.ts';
 import { formatCharacters, formatSize } from '../src/format.ts';
-import { readIncoming, type Incoming } from '../src/incoming.ts';
-import { zipSync } from 'fflate';
-import { bundleName, packName, reboundName } from '../src/naming.ts';
-import { createPack } from '../src/pack.ts';
-import { assertSteamId, rebindToSteamId } from '../src/sl2/rebind.ts';
+import type { IncomingSummary } from '../src/incoming.ts';
+import type { SkippedSave } from '../src/pack.ts';
+import { assertSteamId } from '../src/sl2/rebind.ts';
 import { UI, errorMessage, pickLanguage, type Language } from './i18n.ts';
+import {
+  Cancelled,
+  cancelJob,
+  inspectFiles,
+  isFailure,
+  packFiles,
+  rebindFile,
+  type OnProgress,
+} from './jobs.ts';
 
 const pick = <T extends HTMLElement>(selector: string) => document.querySelector<T>(selector)!;
 
@@ -15,21 +22,57 @@ const fileReport = pick<HTMLDivElement>('#file-report');
 const steamIdInput = pick<HTMLInputElement>('#steamid');
 const steamIdError = pick<HTMLParagraphElement>('#steamid-error');
 const convertButton = pick<HTMLButtonElement>('#convert');
-const status = pick<HTMLParagraphElement>('#status');
+const convertCancel = pick<HTMLButtonElement>('#convert-cancel');
 
 const exportDropZone = pick<HTMLLabelElement>('#export-drop');
 const exportFileInput = pick<HTMLInputElement>('#export-file');
 const exportReport = pick<HTMLDivElement>('#export-report');
 const noteInput = pick<HTMLInputElement>('#note');
 const exportButton = pick<HTMLButtonElement>('#export');
-const exportStatus = pick<HTMLParagraphElement>('#export-status');
+const exportCancel = pick<HTMLButtonElement>('#export-cancel');
+
+/** The strip a tab reports through: how far along, and how it ended. */
+interface Strip {
+  readonly progress: HTMLElement;
+  readonly bar: HTMLProgressElement;
+  readonly step: HTMLElement;
+  readonly cancel: HTMLButtonElement;
+  readonly status: HTMLElement;
+  readonly skipped: HTMLElement;
+}
+
+const convertStrip: Strip = {
+  progress: pick('#convert-progress'),
+  bar: pick<HTMLProgressElement>('#convert-bar'),
+  step: pick('#convert-step'),
+  cancel: convertCancel,
+  status: pick('#status'),
+  skipped: pick('#convert-skipped'),
+};
+
+const exportStrip: Strip = {
+  progress: pick('#export-progress'),
+  bar: pick<HTMLProgressElement>('#export-bar'),
+  step: pick('#export-step'),
+  cancel: exportCancel,
+  status: pick('#export-status'),
+  skipped: pick('#export-skipped'),
+};
 
 const STEAM_ID_KEY = 'rebind.steamid';
 const LANGUAGE_KEY = 'rebind.language';
 
 let language: Language = pickLanguage(navigator.languages ?? [navigator.language], localStorage.getItem(LANGUAGE_KEY));
-let loaded: { incoming: Incoming; name: string } | null = null;
-let toPack: { incoming: Incoming; name: string }[] = [];
+/** What the page keeps of a file: its handle, and what it says it holds. */
+interface Held {
+  readonly file: File;
+  readonly name: string;
+  readonly summary: IncomingSummary;
+}
+let loaded: Held | null = null;
+let toPack: Held[] = [];
+/** True while the worker is busy, so no second job takes over its replies. */
+let busy = false;
 
 const t = () => UI[language];
 
@@ -44,9 +87,38 @@ function escape(text: string): string {
 
 /** Reads an error the way the user should see it, in the current language. */
 function readableError(error: unknown): string {
+  // A worker says which file it choked on; an error thrown here cannot.
+  if (isFailure(error)) return `${error.file} — ${errorMessage(language, error.code, error.message)}`;
   const code = codeOf(error);
   return errorMessage(language, code, code ? (error as Error).message : t().unreadable);
 }
+
+/**
+ * What a file could not hand over, listed under the line that says what it did.
+ * Reading the saves is what proves them sound, so this is the first the user
+ * hears of it: the report drawn when the file was dropped came from the
+ * manifest, which is the sender's word rather than the bytes'.
+ */
+function showSkipped(strip: Strip, skipped: readonly SkippedSave[]): void {
+  if (skipped.length === 0) {
+    strip.skipped.hidden = true;
+    return;
+  }
+  const items = skipped
+    .map(
+      (save) =>
+        `<li><span class="save-name">${escape(save.fileName)}</span>${escape(
+          errorMessage(language, save.code, save.message),
+        )}</li>`,
+    )
+    .join('');
+  show(
+    strip.skipped,
+    `<p class="skipped-head">${escape(t().skipped(skipped.length))}</p>
+     <ul class="skipped-list">${items}</ul>`,
+  );
+}
+
 
 /** The Steam ID typed in, or null with the reason shown to the user. */
 function currentSteamId(): bigint | null {
@@ -75,12 +147,16 @@ function refreshButtons(): void {
   // validating the Steam ID whenever no file is loaded, so a bad id typed first
   // would never be reported.
   const steamId = currentSteamId();
-  convertButton.disabled = loaded === null || steamId === null;
-  exportButton.disabled = toPack.length === 0;
+  convertButton.disabled = loaded === null || steamId === null || busy;
+  exportButton.disabled = toPack.length === 0 || busy;
+  // The strips stay on screen between jobs, so these buttons have to say for
+  // themselves that there is nothing left to call off.
+  convertCancel.disabled = !busy;
+  exportCancel.disabled = !busy;
 }
 
-function describe(incoming: Incoming, name: string): string {
-  const total = incoming.saves.reduce((bytes, entry) => bytes + entry.save.length, 0);
+function describe(incoming: IncomingSummary, name: string): string {
+  const total = incoming.saves.reduce((bytes, entry) => bytes + entry.size, 0);
   const kind = incoming.kind === 'savepack' ? t().savepack : t().saveFile;
   const count = incoming.saves.length > 1 ? ` · ${t().saveCount(incoming.saves.length)}` : '';
   const note = incoming.note ? `<p class="note">“${escape(incoming.note)}”</p>` : '';
@@ -95,7 +171,7 @@ function describe(incoming: Incoming, name: string): string {
       // A lone save needs neither: the header above already gives its name and
       // size, and repeating them inside the card only adds noise.
       const label = entry.fileName ? `<p class="save-name">${escape(entry.fileName)}</p>` : '';
-      const size = incoming.saves.length > 1 ? ` · ${formatSize(entry.save.length)}` : '';
+      const size = incoming.saves.length > 1 ? ` · ${formatSize(entry.size)}` : '';
       return `<li class="save">
         ${label}
         <p class="muted">${escape(t().fromAccount)} ${entry.steamId}${size}</p>
@@ -111,26 +187,60 @@ function describe(incoming: Incoming, name: string): string {
 }
 
 function redrawReports(): void {
-  if (loaded) show(fileReport, describe(loaded.incoming, loaded.name));
+  if (loaded) show(fileReport, describe(loaded.summary, loaded.name));
   if (toPack.length > 0) {
-    show(exportReport, toPack.map((entry) => describe(entry.incoming, entry.name)).join('<hr />'));
+    show(exportReport, toPack.map((entry) => describe(entry.summary, entry.name)).join('<hr />'));
   }
 }
 
-async function readFile(file: File): Promise<{ incoming: Incoming; name: string }> {
-  const bytes = new Uint8Array(await file.arrayBuffer());
-  return { incoming: readIncoming(bytes, new Date(file.lastModified)), name: file.name };
+/**
+ * Shows where the worker is, and offers to stop it. A strip stays up once the
+ * first file has been dropped: it is already saying something by then, and the
+ * count it ends on describes what the page is now holding.
+ */
+function stepReport(strip: Strip, label: (done: number, total: number, name: string) => string): OnProgress {
+  strip.skipped.hidden = true;
+  strip.bar.value = 0;
+  strip.step.textContent = '';
+  strip.progress.classList.remove('unstarted');
+  return (done, total, name) => {
+    strip.bar.value = done / total;
+    strip.step.textContent = label(done, total, name);
+  };
+}
+
+/** Runs one worker job with the page locked and the strip live. */
+async function working<T>(strip: Strip, job: () => Promise<T>): Promise<T | null> {
+  busy = true;
+  refreshButtons();
+  try {
+    return await job();
+  } catch (error) {
+    if (error instanceof Cancelled) strip.status.textContent = t().cancelled;
+    else strip.status.textContent = `${t().conversionFailed}: ${readableError(error)}`;
+    return null;
+  } finally {
+    busy = false;
+    refreshButtons();
+  }
 }
 
 async function loadFile(file: File): Promise<void> {
-  status.textContent = '';
-  try {
-    loaded = await readFile(file);
+  if (busy) return;
+  convertStrip.status.textContent = '';
+  const onProgress = stepReport(convertStrip, (done, total, name) => t().reading(done, total, name));
+
+  const read = await working(convertStrip, () => inspectFiles([file], onProgress));
+  if (!read) return;
+
+  const first = read.good[0];
+  loaded = first ? { file, name: first.name, summary: first.summary } : null;
+  if (loaded) {
     redrawReports();
     fileReport.classList.remove('bad');
-  } catch (error) {
-    loaded = null;
-    show(fileReport, `<p class="error">${escape(readableError(error))}</p>`);
+  } else {
+    const failure = read.bad[0];
+    show(fileReport, `<p class="error">${escape(failure ? readableError(failure) : t().unreadable)}</p>`);
     fileReport.classList.add('bad');
   }
   refreshButtons();
@@ -138,26 +248,32 @@ async function loadFile(file: File): Promise<void> {
 
 /** Every file that parsed; the ones that did not are reported and dropped. */
 async function loadFilesToPack(files: readonly File[]): Promise<void> {
-  exportStatus.textContent = '';
-  const good: typeof toPack = [];
-  const bad: string[] = [];
+  // One job at a time: a second would take over the worker's replies and leave
+  // the first waiting for an answer that never comes.
+  if (busy) return;
+  exportStrip.status.textContent = '';
+  const onProgress = stepReport(exportStrip, (done, total, name) => t().reading(done, total, name));
 
-  for (const file of files) {
-    try {
-      good.push(await readFile(file));
-    } catch (error) {
-      bad.push(`${file.name} — ${readableError(error)}`);
-    }
-  }
+  const read = await working(exportStrip, () => inspectFiles(files, onProgress));
+  if (!read) return;
 
-  toPack = good;
-  const problems = bad.map((line) => `<p class="error">${escape(line)}</p>`).join('');
-  if (good.length === 0) {
+  // The worker keeps no bytes and neither does the page: each file is read
+  // again, one at a time, when the pack is actually written.
+  toPack = read.good.map((entry) => ({
+    file: files[entry.index]!,
+    name: entry.name,
+    summary: entry.summary,
+  }));
+
+  const problems = read.bad
+    .map((failure) => `<p class="error">${escape(readableError(failure))}</p>`)
+    .join('');
+  if (toPack.length === 0) {
     show(exportReport, problems || `<p class="error">${escape(t().unreadable)}</p>`);
     exportReport.classList.add('bad');
   } else {
-    show(exportReport, problems + good.map((entry) => describe(entry.incoming, entry.name)).join('<hr />'));
-    exportReport.classList.toggle('bad', bad.length > 0);
+    show(exportReport, problems + toPack.map((entry) => describe(entry.summary, entry.name)).join('<hr />'));
+    exportReport.classList.toggle('bad', read.bad.length > 0);
   }
   refreshButtons();
 }
@@ -172,92 +288,61 @@ function download(bytes: Uint8Array, name: string): void {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-/** Lets the browser paint before a hash blocks the thread for a moment. */
-const yieldToPaint = () => new Promise((resolve) => setTimeout(resolve, 16));
-
 async function convert(): Promise<void> {
   const steamId = currentSteamId();
-  if (!loaded || steamId === null) return;
+  if (!loaded || steamId === null || busy) return;
 
-  convertButton.disabled = true;
-  status.textContent = t().converting;
-  await yieldToPaint();
+  const held = loaded;
+  convertStrip.status.textContent = t().converting;
+  const onProgress = stepReport(convertStrip, (done, total, name) => t().rebinding(done, total, name));
 
-  try {
-    const rebound = loaded.incoming.saves.map((entry) => {
-      const result = rebindToSteamId(entry.save, steamId);
-      // The name recorded when the save was packed wins: the pack itself may
-      // have been renamed on the way, but that name is what the sender chose.
-      return { ...result, name: reboundName(entry.fileName ?? loaded!.name) };
-    });
-    localStorage.setItem(STEAM_ID_KEY, steamId.toString());
+  const rebound = await working(convertStrip, () =>
+    rebindFile(held.file, steamId, new Date(), onProgress),
+  );
+  if (!rebound) return;
 
-    if (rebound.length === 1) {
-      const only = rebound[0]!;
-      download(only.save, only.name);
-      status.textContent =
-        only.replacements === 0
-          ? t().alreadyYours(only.name, steamId.toString())
-          : t().reboundFromTo(
-              only.name,
-              only.previousSteamId.toString(),
-              steamId.toString(),
-              only.replacements,
-            );
-      convertButton.disabled = false;
-      return;
-    }
+  localStorage.setItem(STEAM_ID_KEY, steamId.toString());
+  download(rebound.bytes, rebound.name);
 
-    // Several saves would mean several downloads, which browsers throttle and
-    // ask permission for; one zip is a single file to save and unpack.
-    const files: Record<string, Uint8Array> = {};
-    for (const entry of rebound) files[entry.name] = entry.save;
-    const name = bundleName(loaded.name);
-    download(zipSync(files, { level: 6 }), name);
-    status.textContent = t().reboundSet(rebound.length, name, steamId.toString());
-  } catch (error) {
-    status.textContent = `${t().conversionFailed}: ${readableError(error)}`;
-  }
-  convertButton.disabled = false;
+  const only = rebound.saves[0]!;
+  convertStrip.status.textContent =
+    (rebound.bundled
+      ? t().reboundSet(rebound.saves.length, rebound.name, steamId.toString())
+      : only.replacements === 0
+        ? t().alreadyYours(rebound.name, steamId.toString())
+        : t().reboundFromTo(
+            rebound.name,
+            only.previousSteamId.toString(),
+            steamId.toString(),
+            only.replacements,
+          ));
+  showSkipped(convertStrip, rebound.skipped);
 }
 
+
 async function packAll(): Promise<void> {
-  if (toPack.length === 0) return;
+  if (toPack.length === 0 || busy) return;
 
-  exportButton.disabled = true;
-  exportStatus.textContent = t().packing;
-  await yieldToPaint();
+  exportStrip.status.textContent = t().packing;
+  const onProgress = stepReport(exportStrip, (done, total, name) => t().packingFile(done, total, name));
 
-  const note = noteInput.value.trim();
-  const now = new Date();
+  // Everything goes into one pack: a practice library is a set, and sending it
+  // should be one file to attach, not one download per save.
+  const bundle = await working(exportStrip, () =>
+    packFiles(toPack.map((entry) => entry.file), noteInput.value.trim(), new Date(), onProgress),
+  );
+  if (!bundle) return;
 
-  try {
-    // Everything goes into one pack: a practice library is a set, and sending it
-    // should be one file to attach, not one download per save.
-    const entries = toPack.flatMap((file) =>
-      file.incoming.saves.map((entry) => ({
-        save: entry.save,
-        fileName: entry.fileName ?? file.name,
-      })),
+  download(bundle.pack, bundle.name);
+  exportStrip.status.textContent =
+    t().packed(
+      bundle.count,
+      bundle.name,
+      formatSize(bundle.rawTotal),
+      formatSize(bundle.pack.length),
     );
-    const pack = createPack(entries, { ...(note ? { note } : {}), now });
-    const name = packName(
-      entries.map((entry) => entry.fileName),
-      now,
-    );
-    download(pack, name);
+  showSkipped(exportStrip, bundle.skipped);
 
-    const rawTotal = entries.reduce((bytes, entry) => bytes + entry.save.length, 0);
-    exportStatus.textContent = t().packed(
-      entries.length,
-      name,
-      formatSize(rawTotal),
-      formatSize(pack.length),
-    );
-  } catch (error) {
-    exportStatus.textContent = `${t().conversionFailed}: ${readableError(error)}`;
-  }
-  exportButton.disabled = false;
 }
 
 function selectTab(name: 'convert' | 'export'): void {
@@ -287,10 +372,13 @@ function applyLanguage(): void {
     button.setAttribute('aria-current', String(button.dataset['lang'] === language));
   }
   redrawReports();
-  // The status lines refer to something that already happened; rewriting them
-  // in another language would be a lie about when it ran.
-  status.textContent = '';
-  exportStatus.textContent = '';
+  // The status lines and the step counts refer to something that already
+  // happened; rewriting them in another language would be a lie about when.
+  for (const strip of [convertStrip, exportStrip]) {
+    strip.status.textContent = '';
+    strip.step.textContent = '';
+    strip.skipped.hidden = true;
+  }
 }
 
 /** Drag and drop, click and keyboard, for one drop zone. */
@@ -326,7 +414,9 @@ wireDropZone(exportDropZone, exportFileInput, (files) => void loadFilesToPack(fi
 
 steamIdInput.addEventListener('input', refreshButtons);
 convertButton.addEventListener('click', () => void convert());
+convertCancel.addEventListener('click', () => cancelJob());
 exportButton.addEventListener('click', () => void packAll());
+exportCancel.addEventListener('click', () => cancelJob());
 
 for (const tab of document.querySelectorAll<HTMLButtonElement>('.tab')) {
   tab.addEventListener('click', () => {

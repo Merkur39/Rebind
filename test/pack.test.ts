@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { unzipSync, zipSync, strToU8 } from 'fflate';
 import { A_SENDER, A_THIRD_PARTY, buildSl2, flipByte } from './fixture.ts';
 import { bytesEqual } from '../src/bytes.ts';
-import { createPack, readPack, PACK_FORMAT } from '../src/pack.ts';
+import { createPack, openPack, readManifest, readPack, PACK_FORMAT } from '../src/pack.ts';
 
 const owner = A_SENDER;
 const at = new Date('2026-08-20T10:00:00.000Z');
@@ -100,9 +100,41 @@ describe('readPack', () => {
     assert.ok(bytesEqual(saves[1]!.save, originals[1]!.save));
   });
 
-  it('rejects a pack whose save was altered after packing', () => {
+  it('hands over the saves that are sound and names the one it cannot read', () => {
     const files = unzipSync(createPack(two(), { now: at }));
     flipByte(files['Avant Radahn.sl2']!, 0x400);
+
+    const { saves, bad } = readPack(zipSync(files));
+
+    assert.deepEqual(
+      saves.map((save) => save.fileName),
+      ['Avant Margit.sl2'],
+    );
+    assert.deepEqual(
+      bad.map((save) => [save.fileName, save.code]),
+      [['Avant Radahn.sl2', 'pack-corrupted']],
+    );
+  });
+
+  it('skips a save the archive does not hold rather than withholding the rest', () => {
+    const files = unzipSync(createPack(two(), { now: at }));
+    delete files['Avant Radahn.sl2'];
+
+    const { saves, bad } = readPack(zipSync(files));
+
+    assert.deepEqual(
+      saves.map((save) => save.fileName),
+      ['Avant Margit.sl2'],
+    );
+    assert.deepEqual(
+      bad.map((save) => save.code),
+      ['pack-missing-save'],
+    );
+  });
+
+  it('gives up only when nothing in the pack can be read', () => {
+    const files = unzipSync(createPack(one(), { now: at }));
+    flipByte(files['Avant Margit.sl2']!, 0x400);
 
     assert.throws(() => readPack(zipSync(files)), /corrupted|checksum|integrity/i);
   });
@@ -136,7 +168,121 @@ describe('readPack', () => {
     assert.throws(() => readPack(zipSync(files)), /missing/i);
   });
 
+  it('rejects a manifest that gives an unreadable account', () => {
+    const files = unzipSync(createPack(one(), { now: at }));
+    const manifest = JSON.parse(new TextDecoder().decode(files['manifest.json']!));
+    manifest.saves[0].steamId = 'nobody';
+    files['manifest.json'] = strToU8(JSON.stringify(manifest));
+
+    assert.throws(() => readPack(zipSync(files)), /manifest/i);
+  });
+
+  it('reads the manifest without inflating a single save', () => {
+    const files = unzipSync(createPack(two(), { now: at }));
+    for (const name of Object.keys(files)) {
+      if (name !== 'manifest.json') files[name] = new Uint8Array(8).fill(0xff);
+    }
+
+    const manifest = readManifest(zipSync(files));
+
+    assert.deepEqual(
+      manifest.saves.map((entry) => entry.fileName),
+      ['Avant Margit.sl2', 'Avant Radahn.sl2'],
+    );
+  });
+
   it('rejects something that is not an archive at all', () => {
     assert.throws(() => readPack(new TextEncoder().encode('hello world')), /not a .*savepack/i);
+  });
+});
+
+describe('openPack', () => {
+  it('writes a pack a reader accepts, one save at a time', () => {
+    const writer = openPack({ now: at });
+    writer.add(margit(), 'Avant Margit.sl2');
+    writer.add(radahn(), 'Avant Radahn.sl2');
+
+    const { manifest, saves } = readPack(writer.finish());
+
+    assert.equal(manifest.createdAt, at.toISOString());
+    assert.deepEqual(
+      saves.map((save) => save.fileName),
+      ['Avant Margit.sl2', 'Avant Radahn.sl2'],
+    );
+  });
+
+  it('describes each save as it goes, so a caller can say where it is', () => {
+    const writer = openPack({ now: at });
+
+    const packed = writer.add(margit(), 'Avant Margit.sl2');
+
+    assert.equal(packed.fileName, 'Avant Margit.sl2');
+    assert.equal(packed.steamId, owner.toString());
+    assert.deepEqual(
+      packed.characters.map((character) => character.name),
+      ['RL1 Any%'],
+    );
+    writer.finish();
+  });
+
+  it('keeps names unique as they arrive, without seeing the batch first', () => {
+    const writer = openPack({ now: at });
+    writer.add(margit(), 'ER0000.sl2');
+    writer.add(radahn(), 'ER0000.sl2');
+
+    const { saves } = readPack(writer.finish());
+
+    assert.deepEqual(
+      saves.map((save) => save.fileName),
+      ['ER0000.sl2', 'ER0000-2.sl2'],
+    );
+  });
+
+  it('refuses to close a pack holding nothing', () => {
+    assert.throws(() => openPack({ now: at }).finish(), /at least one save/i);
+  });
+
+  it("packs the same batch to the same bytes twice running", () => {
+    const build = () => {
+      const writer = openPack({ now: at });
+      writer.add(margit(), "Avant Margit.sl2");
+      return writer.finish();
+    };
+
+    assert.ok(bytesEqual(build(), build()), "two identical batches gave different archives");
+  });
+
+  it("keeps the note, like the whole-batch call does", () => {
+    const writer = openPack({ note: 'Practice set', now: at });
+    writer.add(margit(), 'Avant Margit.sl2');
+
+    assert.equal(readPack(writer.finish()).manifest.note, 'Practice set');
+  });
+});
+
+describe('readPack, on a save packed while already damaged', () => {
+  it('skips it and says the save is the problem, not the pack', () => {
+    // Its bytes match the manifest to the byte: the pack is intact and the save
+    // inside it is not.
+    const damaged = margit();
+    flipByte(damaged, 0x1000);
+    const pack = createPack(
+      [
+        { save: damaged, fileName: 'Avant Margit.sl2' },
+        { save: radahn(), fileName: 'Avant Radahn.sl2' },
+      ],
+      { now: at },
+    );
+
+    const { saves, bad } = readPack(pack);
+
+    assert.deepEqual(
+      saves.map((save) => save.fileName),
+      ['Avant Radahn.sl2'],
+    );
+    assert.deepEqual(
+      bad.map((save) => [save.fileName, save.code]),
+      [['Avant Margit.sl2', 'save-corrupted']],
+    );
   });
 });

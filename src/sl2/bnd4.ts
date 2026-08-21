@@ -79,3 +79,20 @@ export function verifyChecksums(save: Uint8Array, entries: readonly Sl2Entry[]):
 export function refreshChecksums(save: Uint8Array, entries: readonly Sl2Entry[]): void {
   for (const entry of entries) save.set(digestOf(save, entry), entry.checksumOffset);
 }
+
+/**
+ * Refuses a save whose blocks no longer match the digests guarding them. The
+ * game checks the same twelve, so a save that fails here is one it would turn
+ * down: a download cut short, a copy half written, an edit by a tool that did
+ * not rewrite them. Nothing upstream notices — the container still parses and
+ * the profile still reads — so it has to be asked outright.
+ */
+export function assertChecksums(save: Uint8Array, entries: readonly Sl2Entry[]): void {
+  const bad = verifyChecksums(save, entries);
+  if (bad.length > 0) {
+    throw new Sl2FormatError(
+      'save-corrupted',
+      `This save is damaged: ${bad.length} of its ${entries.length} blocks do not match their checksum.`,
+    );
+  }
+}

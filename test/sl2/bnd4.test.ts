@@ -1,9 +1,10 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildSl2, flipByte } from '../fixture.ts';
-import { parseSl2, verifyChecksums, refreshChecksums } from '../../src/sl2/bnd4.ts';
+import { assertChecksums, parseSl2, verifyChecksums, refreshChecksums } from '../../src/sl2/bnd4.ts';
 
-const steamId = 76561198000000001n;
+const A_SENDER = 76561198000000001n;
+const steamId = A_SENDER;
 const someSave = () => buildSl2({ steamId, slots: [{ name: 'Tarnished', level: 1, secondsPlayed: 0 }] });
 
 describe('parseSl2', () => {
@@ -58,5 +59,22 @@ describe('refreshChecksums', () => {
     for (let i = 0; i < save.length; i++) if (save[i] !== before[i]) changed.push(i);
     assert.equal(changed.length, 17);
     assert.equal(changed[0], entries[3]!.checksumOffset);
+  });
+});
+
+describe('assertChecksums', () => {
+  it('accepts a save whose blocks all match', () => {
+    const save = buildSl2({ steamId: A_SENDER, slots: [{ name: 'Ciri', level: 9, secondsPlayed: 60 }] });
+
+    assert.doesNotThrow(() => assertChecksums(save, parseSl2(save)));
+  });
+
+  it('refuses a save whose bytes were altered under its own digests', () => {
+    // What a bad download or a half-written copy leaves behind: the file parses,
+    // the profile reads, and the game refuses it.
+    const save = buildSl2({ steamId: A_SENDER, slots: [{ name: 'Ciri', level: 9, secondsPlayed: 60 }] });
+    flipByte(save, 0x1000);
+
+    assert.throws(() => assertChecksums(save, parseSl2(save)), /damaged|checksum/i);
   });
 });

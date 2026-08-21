@@ -130,7 +130,9 @@ kbd {
 
 .filename {
   font-weight: 600;
-  word-break: break-all;
+  /* Wraps between words, and only inside one when the word alone overflows —
+     a save name is a sentence of its own, not a string of characters. */
+  overflow-wrap: break-word;
 }
 
 .muted {
@@ -204,7 +206,7 @@ button:disabled {
   margin: 0.75rem 0 0;
   font-size: 0.9rem;
   color: var(--muted);
-  word-break: break-all;
+  overflow-wrap: break-word;
 }
 
 footer {
@@ -339,7 +341,7 @@ a {
   margin: 0 0 0.15rem;
   color: var(--gold);
   font-weight: 600;
-  word-break: break-all;
+  overflow-wrap: break-word;
 }
 
 .save-name.muted {
@@ -370,4 +372,113 @@ a {
 
 .legal p {
   margin: 0.75rem 0 0;
+}
+
+/* Laid out from the start, shown from the first file onwards. Taking the room
+   only when it appears would push the status line and the footer down under the
+   cursor, and once it has said something it keeps saying it: the last count is
+   still worth reading after the work is done. */
+.progress.unstarted {
+  visibility: hidden;
+}
+
+.progress {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin-top: 1rem;
+}
+
+.progress progress {
+  width: 100%;
+  height: 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 0.25rem;
+  background: var(--panel);
+  /* Firefox styles the bar through the element, Chrome through the two
+     pseudo-elements below; both are needed for one look. */
+  accent-color: var(--gold);
+}
+
+.progress progress::-webkit-progress-bar {
+  border-radius: 0.25rem;
+  background: var(--panel);
+}
+
+.progress progress::-webkit-progress-value {
+  border-radius: 0.25rem;
+  background: var(--gold);
+}
+
+.progress .muted {
+  grid-column: 1;
+  margin: 0;
+  font-size: 0.9rem;
+  overflow-wrap: break-word;
+}
+
+.progress .ghost {
+  grid-row: 1 / span 2;
+  grid-column: 2;
+}
+
+button.ghost {
+  padding: 0.5rem 1rem;
+  border-color: var(--line);
+  background: transparent;
+  color: var(--muted);
+  font-weight: 400;
+}
+
+button.ghost:disabled {
+  /* A ghost button disabled looks exactly like one at rest otherwise, and only
+     the cursor would tell them apart. */
+  opacity: 0.55;
+}
+
+/* Only when it can still do something: a disabled button that lights up under
+   the cursor reads as clickable. */
+button.ghost:hover:not(:disabled) {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+/* What a file could not hand over, said after the line that says what it did.
+   Same shape as a save card, in the warning colour rather than the gold. */
+.skipped {
+  margin-top: 0.75rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--bad);
+  border-radius: 0.4rem;
+  background: var(--panel);
+  font-size: 0.9rem;
+}
+
+.skipped-head {
+  margin: 0;
+  color: var(--bad);
+  font-weight: 600;
+}
+
+.skipped-list {
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.skipped-list li {
+  color: var(--muted);
+  overflow-wrap: break-word;
+}
+
+.skipped-list li + li {
+  margin-top: 0.4rem;
+  padding-top: 0.4rem;
+  border-top: 1px solid var(--line);
+}
+
+.skipped-list .save-name {
+  display: block;
 }

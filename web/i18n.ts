@@ -43,6 +43,15 @@ const EN = {
   notePlaceholder: "RL1 Any%, post-Margit",
   exportButton: "Pack and download",
   packing: "Packing…",
+  reading: (done: number, total: number, name: string) =>
+    `Reading ${done} / ${total} — ${name}`,
+  packingFile: (done: number, total: number, name: string) =>
+    `Packing ${done} / ${total} — ${name}`,
+  rebinding: (done: number, total: number, name: string) =>
+    `Rebinding ${done} / ${total} — ${name}`,
+  cancel: "Cancel",
+  skipped: (count: number) => `${count} save${count === 1 ? "" : "s"} skipped:`,
+  cancelled: "Cancelled.",
   saveCount: (count: number) => `${count} saves`,
   packed: (count: number, name: string, from: string, to: string) =>
     `Packed ${count} save${count === 1 ? "" : "s"} into ${name}: ${from} became ${to}.`,
@@ -101,6 +110,16 @@ const FR: Translations = {
   notePlaceholder: "RL1 Any%, après Margit",
   exportButton: "Compresser et télécharger",
   packing: "Compression en cours…",
+  reading: (done: number, total: number, name: string) =>
+    `Lecture ${done} / ${total} — ${name}`,
+  packingFile: (done: number, total: number, name: string) =>
+    `Compression ${done} / ${total} — ${name}`,
+  rebinding: (done: number, total: number, name: string) =>
+    `Réaffectation ${done} / ${total} — ${name}`,
+  cancel: "Annuler",
+  skipped: (count: number) =>
+    `${count} sauvegarde${count > 1 ? "s" : ""} ignorée${count > 1 ? "s" : ""} :`,
+  cancelled: "Annulé.",
   saveCount: (count: number) => `${count} sauvegardes`,
   packed: (count: number, name: string, from: string, to: string) =>
     `${count} sauvegarde${count > 1 ? "s" : ""} compressée${count > 1 ? "s" : ""} dans ${name} : ${from} devient ${to}.`,
@@ -129,6 +148,8 @@ const ERRORS: Record<Language, Record<ErrorCode, string>> = {
     "unexpected-layout": "This save has a layout this tool does not recognise.",
     truncated: "This save is incomplete — the download was probably cut short.",
     "no-profile-block": "This save has no profile block.",
+    "save-corrupted":
+      "This save is damaged — its own checksums do not match, and the game would turn it down.",
     "not-an-archive": "This file is not a savepack.",
     "pack-unreadable-manifest": "This savepack has an unreadable manifest.",
     "pack-wrong-format": "This savepack was made by a newer version of Rebind.",
@@ -136,6 +157,7 @@ const ERRORS: Record<Language, Record<ErrorCode, string>> = {
     "pack-missing-manifest": "This archive is not a savepack.",
     "pack-missing-save": "This savepack is missing one of its saves.",
     "pack-empty": "A savepack needs at least one save.",
+    "zip-unwritable": "This archive could not be written.",
     "pack-corrupted":
       "This savepack is corrupted — the save does not match its checksum.",
     "neither-format": "This is neither a savepack nor an Elden Ring save.",
@@ -149,6 +171,8 @@ const ERRORS: Record<Language, Record<ErrorCode, string>> = {
     truncated:
       "Cette sauvegarde est incomplète — le téléchargement a sans doute été interrompu.",
     "no-profile-block": "Cette sauvegarde ne contient pas de bloc profil.",
+    "save-corrupted":
+      "Cette sauvegarde est abîmée — ses propres empreintes ne correspondent pas, le jeu la refuserait.",
     "not-an-archive": "Ce fichier n'est pas un savepack.",
     "pack-unreadable-manifest": "Le manifeste de ce savepack est illisible.",
     "pack-wrong-format":
@@ -157,6 +181,7 @@ const ERRORS: Record<Language, Record<ErrorCode, string>> = {
     "pack-missing-manifest": "Cette archive n'est pas un savepack.",
     "pack-missing-save": "Il manque une des sauvegardes de ce savepack.",
     "pack-empty": "Un savepack doit contenir au moins une sauvegarde.",
+    "zip-unwritable": "Cette archive n'a pas pu être écrite.",
     "pack-corrupted":
       "Ce savepack est corrompu — la sauvegarde ne correspond pas à son empreinte.",
     "neither-format": "Ceci n'est ni un savepack ni une sauvegarde Elden Ring.",

@@ -4,10 +4,13 @@
  * unmapped code shows something readable rather than nothing.
  */
 export type ErrorCode =
-  | 'not-a-save'
+  | 'pack-empty'
+  | 'zip-unwritable'
+| 'not-a-save'
   | 'unexpected-layout'
   | 'truncated'
   | 'no-profile-block'
+  | 'save-corrupted'
   | 'not-an-archive'
   | 'pack-unreadable-manifest'
   | 'pack-wrong-format'
