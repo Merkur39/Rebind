@@ -73,7 +73,8 @@ export function buildSl2(options: FixtureOptions): Buffer {
     // Deterministic filler so an untouched character block is provably intact.
     for (let i = 0; i < 0x400; i++) buf[body + i] = (index * 31 + i) & 0xff;
     if (!slot) return;
-    buf[profileBody + 0x3a + index] = 1;
+    // The one byte that marks the slot as holding a character the game lists.
+    buf[profileBody + 0x1954 + index] = 1;
     const header = profileBody + 0x195e + index * 0x24c;
     buf.write(slot.name, header, 0x22, 'utf16le');
     buf.writeInt32LE(slot.level, header + 0x22);

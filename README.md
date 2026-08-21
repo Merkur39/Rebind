@@ -182,6 +182,13 @@ for no benefit. Both are checked against `node:crypto` in the tests.
 The `.sl2` format was reverse-engineered against a real save, and those findings
 are encoded in `test/fixture.ts`, which builds a structurally faithful synthetic
 save. `test/sl2/real-save.test.ts` re-verifies them against an actual save file
-when the machine running the tests has one, and says so either way. That check is
-what caught a slot the game had left flagged as occupied with its summary header
-already cleared — the fixture only ever encoded what we believed.
+when the machine running the tests has one, and says so either way — the fixture
+only ever encodes what we believe. That check is what caught which slots hold a
+character being read out of byte `0x3a` of the profile block, which is not a flag
+at all: it is clear on every save of a practice library the game loads without
+complaint, so all fifty came back showing nobody. Falling back on the name in the
+summary header then failed the other way round — deleting a character leaves both
+its name and its whole data block behind, and a save whose second slot the game
+does not list was showing two. One byte per slot at `0x1954` is the entire
+record, and the game goes by nothing else.
+slots of those 52 saves never disagreed with its character block holding data.

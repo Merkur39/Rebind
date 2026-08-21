@@ -13,7 +13,7 @@ describe('readProfile', () => {
     assert.equal(readProfile(save, parseSl2(save)).steamId, steamId);
   });
 
-  it('describes every occupied character slot and skips the empty ones', () => {
+  it('describes every character slot and skips the empty ones', () => {
     const save = buildSl2({
       steamId,
       slots: [
@@ -38,26 +38,55 @@ describe('readProfile', () => {
     assert.equal(readProfile(save, parseSl2(save)).characters[0]!.name, name);
   });
 });
+describe('readProfile, on the slots a save does not list', () => {
+  /** Where the profile block starts in a save this fixture builds. */
+  const PROFILE_BODY = 0x19003b0;
+  /** One byte per slot, set while the slot holds a character the game lists. */
+  const ACTIVE = PROFILE_BODY + 0x1954;
+  /**
+   * The byte an earlier version mistook for that table. It is clear on saves
+   * whose character the game loads without complaint, so reading it cost a
+   * whole practice library its characters.
+   */
+  const NOT_A_FLAG = PROFILE_BODY + 0x3a;
 
-describe('readProfile, on a slot the game left half-erased', () => {
-  /** Offset of the occupancy flags inside the profile block. */
-  const OCCUPANCY = 0x19003b0 + 0x3a;
+  const two = () => ({
+    steamId,
+    slots: [
+      { name: 'Ciri', level: 9, secondsPlayed: 11266 },
+      { name: 'RL1 Any%', level: 1, secondsPlayed: 157700 },
+    ],
+  });
 
-  it('ignores a slot flagged as occupied whose header carries no character', () => {
-    // Seen on a real save after a character was replaced: the flag stayed at 1
-    // while the summary header was cleared.
-    const save = buildSl2({ steamId, slots: [{ name: 'blackrodeur', level: 353, secondsPlayed: 846594 }] });
-    save[OCCUPANCY + 1] = 1;
+  it('skips a character the save no longer marks as active', () => {
+    // Deleting a character clears this byte and leaves everything else behind:
+    // the summary header still names it, and its data block still holds it in
+    // full. Seen on a real save, whose second character the game does not list.
+    const save = buildSl2(two());
+    save[ACTIVE + 1] = 0;
 
     const { characters } = readProfile(save, parseSl2(save));
 
-    assert.deepEqual(characters, [{ slot: 0, name: 'blackrodeur', level: 353, secondsPlayed: 846594 }]);
+    assert.deepEqual(characters, [{ slot: 0, name: 'Ciri', level: 9, secondsPlayed: 11266 }]);
   });
 
-  it('still ignores a named slot that is not flagged as occupied', () => {
-    const save = buildSl2({ steamId, slots: [{ name: 'Deleted', level: 12, secondsPlayed: 60 }] });
-    save[OCCUPANCY] = 0;
+  it('ignores the byte that used to be read as the active table', () => {
+    const save = buildSl2(two());
+    save[NOT_A_FLAG] = 0;
+    save[NOT_A_FLAG + 1] = 0;
 
-    assert.deepEqual(readProfile(save, parseSl2(save)).characters, []);
+    const { characters } = readProfile(save, parseSl2(save));
+
+    assert.equal(characters.length, 2);
+  });
+
+  it('skips an active slot whose summary header carries no name', () => {
+    // Nothing to show for it, so it would surface as a nameless character.
+    const save = buildSl2({ steamId, slots: [{ name: 'Ciri', level: 353, secondsPlayed: 846594 }] });
+    save[ACTIVE + 1] = 1;
+
+    const { characters } = readProfile(save, parseSl2(save));
+
+    assert.deepEqual(characters, [{ slot: 0, name: 'Ciri', level: 353, secondsPlayed: 846594 }]);
   });
 });

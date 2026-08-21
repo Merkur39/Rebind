@@ -4,13 +4,22 @@ import { Sl2FormatError } from './bnd4.ts';
 
 /**
  * Entry 10 of the container holds the profile block: the Steam account the save
- * belongs to, which slots are occupied, and a summary header per slot. All the
- * offsets below are relative to the start of that block and were verified
- * against a real save file.
+ * belongs to, one byte per slot saying whether it holds a character, then one
+ * summary header per slot. All the offsets below are relative to the start of
+ * that block and were verified against real saves.
+ *
+ * That single byte is the only thing that says a character exists, and the game
+ * goes by nothing else. Deleting a character clears it and leaves the rest
+ * behind: the summary header still carries the name, and the character's own
+ * block still holds it in full. Two earlier readings got this wrong — byte 0x3a
+ * of the block, which is not a flag at all and is clear on every save of a
+ * practice library the game loads without complaint, then the presence of a
+ * name, which lists a character the game does not. EldenRingSaveCopier reads
+ * the same byte, at 0x1901D04 of a save laid out as usual.
  */
 export const PROFILE_ENTRY_INDEX = 10;
 export const STEAM_ID_OFFSET = 0x04;
-export const SLOT_OCCUPANCY_OFFSET = 0x3a;
+export const SLOT_ACTIVE_OFFSET = 0x1954;
 export const SLOT_HEADERS_OFFSET = 0x195e;
 export const SLOT_HEADER_SIZE = 0x24c;
 const NAME_SIZE = 0x22;
@@ -45,11 +54,11 @@ export function readProfile(save: Uint8Array, entries: readonly Sl2Entry[]): Pro
   const characters: CharacterSummary[] = [];
 
   for (let slot = 0; slot < SLOT_COUNT; slot++) {
-    if (save[base + SLOT_OCCUPANCY_OFFSET + slot] !== 1) continue;
+    if (save[base + SLOT_ACTIVE_OFFSET + slot] !== 1) continue;
     const header = base + SLOT_HEADERS_OFFSET + slot * SLOT_HEADER_SIZE;
+    // Nothing to show for a slot the game marks as used but never named, and a
+    // nameless entry in a list of characters describes nothing.
     const name = readName(save, header);
-    // A save that replaced a character can keep the flag set while the summary
-    // header is cleared, which would otherwise surface as a nameless slot.
     if (name === '') continue;
     characters.push({
       slot,
