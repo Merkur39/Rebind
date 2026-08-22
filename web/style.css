@@ -384,6 +384,13 @@ a {
   margin: 0.75rem 0 0;
 }
 
+.choice label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
 /* Laid out from the start, shown from the first file onwards. Taking the room
    only when it appears would push the status line and the footer down under the
    cursor, and once it has said something it keeps saying it: the last count is

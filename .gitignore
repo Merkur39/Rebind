@@ -4,4 +4,4 @@ dist-web/
 *.savepack
 *.sl2
 *.sl2.bak
-pnpm-workspace.yaml
+.env.sentry-build-plugin

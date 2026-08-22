@@ -1,4 +1,5 @@
 /// <reference lib="webworker" />
+import { registerWebWorker } from '@sentry/browser';
 import { codeOf, type ErrorCode } from '../src/errors.ts';
 import { packName } from '../src/naming.ts';
 import { openPack, type SkippedSave } from '../src/pack.ts';
@@ -35,6 +36,12 @@ export interface Failure {
   readonly file: string;
   readonly code: ErrorCode | null;
   readonly message: string;
+  /**
+   * Only what nobody expected travels with the error itself, which survives the
+   * structured clone with its stack — the one part of it worth reporting. A
+   * coded failure is shown to the user and goes no further.
+   */
+  readonly cause?: Error;
 }
 
 export interface Inspected {
@@ -68,15 +75,22 @@ export type PackEvent =
 
 const scope = self as unknown as DedicatedWorkerGlobalScope;
 
+// Hands the page the debug ids of this bundle. Without them a stack from here
+// reaches Sentry as it was minified, since the page's own ids are all the SDK
+// running there can see.
+registerWebWorker({ self: scope });
+
 function post(event: PackEvent, transfer: Transferable[] = []): void {
   scope.postMessage(event, transfer);
 }
 
 function failureOf(file: string, error: unknown): Failure {
+  const code = codeOf(error);
   return {
     file,
-    code: codeOf(error),
+    code,
     message: error instanceof Error ? error.message : String(error),
+    ...(code === null && error instanceof Error ? { cause: error } : {}),
   };
 }
 

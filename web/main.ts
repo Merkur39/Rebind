@@ -14,6 +14,11 @@ import {
   rebindFile,
   type OnProgress,
 } from './jobs.ts';
+import { report, reportingOn, setReporting, startMonitoring } from './monitoring.ts';
+
+// Before the page touches the document, so that a crash while wiring it up is
+// reported rather than silent.
+startMonitoring();
 
 const pick = <T extends HTMLElement>(selector: string) => document.querySelector<T>(selector)!;
 
@@ -243,6 +248,7 @@ async function working<T>(strip: Strip, job: () => Promise<T>): Promise<T | null
   } catch (error) {
     if (error instanceof Cancelled) strip.status.textContent = t().cancelled;
     else strip.status.textContent = `${t().conversionFailed}: ${readableError(error)}`;
+    report(error);
     return null;
   } finally {
     busy = false;
@@ -257,6 +263,9 @@ async function loadFile(file: File): Promise<void> {
 
   const read = await working(convertStrip, () => inspectFiles([file], onProgress));
   if (!read) return;
+
+  // A file the worker could not name a reason for is a bug, not a bad save.
+  for (const failure of read.bad) report(failure);
 
   const first = read.good[0];
   loaded = first ? { file, name: first.name, summary: first.summary } : null;
@@ -281,6 +290,8 @@ async function loadFilesToPack(files: readonly File[]): Promise<void> {
 
   const read = await working(exportStrip, () => inspectFiles(files, onProgress));
   if (!read) return;
+
+  for (const failure of read.bad) report(failure);
 
   // A savepack is what this tab makes. Taking one back would unpack it only to
   // pack it again, under a new date and without the note it came with.
@@ -542,6 +553,10 @@ for (const button of document.querySelectorAll<HTMLButtonElement>('.lang')) {
     applyLanguage();
   });
 }
+
+const reportingBox = pick<HTMLInputElement>('#reporting');
+reportingBox.checked = reportingOn();
+reportingBox.addEventListener('change', () => setReporting(reportingBox.checked));
 
 const remembered = localStorage.getItem(STEAM_ID_KEY);
 if (remembered) steamIdInput.value = remembered;

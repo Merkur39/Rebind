@@ -18,9 +18,23 @@ export function isFailure(value: unknown): value is Failure {
 
 let worker: Worker | null = null;
 let cancel: (() => void) | null = null;
+let watch: ((worker: Worker) => void) | null = null;
+
+/**
+ * Called with each worker as it is made, before anything else listens to it —
+ * which is the whole point: the worker announces its debug ids straight away,
+ * and whoever wants them has to be there first, and to swallow that message
+ * before the handler below mistakes it for a job's answer.
+ */
+export function watchWorkers(fn: (worker: Worker) => void): void {
+  watch = fn;
+}
 
 function running(): Worker {
-  worker ??= new Worker(new URL('./jobs.worker.ts', import.meta.url), { type: 'module' });
+  if (!worker) {
+    worker = new Worker(new URL('./jobs.worker.ts', import.meta.url), { type: 'module' });
+    watch?.(worker);
+  }
   return worker;
 }
 

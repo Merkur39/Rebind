@@ -16,9 +16,11 @@
     "test": "node --test \"test/**/*.test.ts\""
   },
   "dependencies": {
+    "@sentry/browser": "^10.70.0",
     "fflate": "^0.8.2"
   },
   "devDependencies": {
+    "@sentry/vite-plugin": "^5.4.0",
     "@types/node": "^22.10.2",
     "typescript": "^5.7.2",
     "vite": "^8.2.1"
