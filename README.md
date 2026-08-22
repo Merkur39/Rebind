@@ -20,9 +20,11 @@ choice.
 
 ## Your file never leaves your machine
 
-The conversion runs entirely in the browser. There is no server, no upload, and
-no request of any kind once the page has loaded — it works offline. Converting a
-27.6 MB save takes about 650 ms.
+The conversion runs entirely in the browser. There is no server and nothing is
+uploaded, and once the page has loaded it makes no request of any kind unless it
+breaks — in which case a technical report goes to Sentry, which is the one thing
+it needs a network for. Short of that it works offline. Converting a 27.6 MB save
+takes about 650 ms.
 
 ## What it does not do
 
@@ -191,6 +193,49 @@ workflow makes the failure visible.
 
 `vite.config.ts` sets `base: './'`, so the page works both at the root of a
 domain and from a subdirectory.
+
+### Error reporting
+
+The page reports to Sentry only what it could not explain: a crash while wiring
+the document up, or a failure the worker could put no code on. Anything carrying
+a code from `src/errors.ts` is the file's fault rather than the code's and is
+already said to the user in their own language, so it stops there.
+`web/reportable.ts` draws that line and `web/monitoring.ts` asks it before
+sending. Only the page carries the SDK; the worker sends its error back with the
+failure, stack and all, and the page reports it from there.
+
+Nothing about the user goes along: no tracing, no session replay, no save
+contents, and no file name — a failure names its file on screen, not in what is
+sent. Sessions are off as well, the tally Sentry keeps of visitors whether or not
+anything broke, so the page asks nothing of the network until something does go
+wrong. What travels then is the error, its stack, the browser and the system, and
+the IP address of that one request. Any seventeen-digit number is blanked out on
+the way out, that being the shape of the one identifier this page exists to
+handle.
+
+The DSN is written into `web/monitoring.ts`. A browser SDK cannot keep one
+secret, so it is public wherever it lives, and in source it means any build
+reports rather than only the one Vercel makes. The dev server reports nothing.
+
+Source maps are built and uploaded only when `SENTRY_AUTH_TOKEN` is in the
+environment — Vercel holds one as a project environment variable, and
+`.env.sentry-build-plugin` holds one locally, uncommitted. Without a token there
+is no plugin and no map, so a clone or a fork builds with nothing configured.
+The plugin deletes the maps once they are uploaded; the site never serves them.
+Sentry reads a stack through the debug id stamped on the bundle it came from,
+and the worker, bundled apart, inherits neither the map nor the plugin that
+stamps it: `vite.config.ts` names both again under `worker`, in a pass that
+stamps and leaves the upload to the page's. The stamp then has to travel, since
+the SDK doing the reporting runs on the page and reads only the page's own —
+`registerWebWorker` announces the worker's, `webWorkerIntegration` takes them,
+and `web/jobs.ts` hands over each worker as it is made so that Sentry is
+listening before anything else and swallows that message rather than letting it
+pass for a job's answer.
+
+`pnpm-workspace.yaml` is committed for one line: `@sentry/vite-plugin` reaches
+for the `@sentry/cli` binary, whose install script pnpm will not run unless told
+to. The SDK costs the page bundle about 27 kB gzipped, which is most of what it
+weighs.
 
 ### Layout
 

@@ -13,7 +13,7 @@ const EN = {
   ledeHtml:
     "An Elden Ring save belongs to the Steam account that created it, so another player’s save, copied as is, shows no characters in game. This page rebinds the one you were given, or packs your own, to share them.",
   privacyHtml:
-    "<strong>Your file never leaves this page.</strong> Everything runs in your browser — there is no server, and nothing is uploaded.",
+    "<strong>Your file never leaves this page.</strong> Everything runs in your browser: no server reads it, and nothing of it is sent anywhere.",
   step1: "The file you were sent",
   dropHtml: "Drop a save, a <code>.savepack.zip</code> or a zip of saves here",
   pickFile: "Choose a file",
@@ -66,10 +66,11 @@ const EN = {
   footerHtml:
     'The rebound file keeps a name of your choosing. Loading it into the game is a save organiser\'s job — <a href="https://github.com/Kahmul/SoulsSpeedruns-Save-Organizer">SoulsSpeedruns Save Organizer</a> copies the one you pick over <code>ER0000.sl2</code> and gives you a read-only toggle for practice.',
   legalTitle: "Legal",
+  reportingLabel: "Send a technical report if the page breaks",
   notAffiliatedHtml:
     "Rebind is an independent tool, not affiliated with or endorsed by FromSoftware, Bandai Namco or Valve. Elden Ring and Steam are trademarks of their respective owners, named here only to say what this works with.",
   noDataHtml:
-    "Nothing is collected. No file, no identifier and no usage data ever leaves your browser; there is no analytics and no cookie. Your Steam ID and your language choice are kept on your own machine so you do not retype them, and clearing your browser data removes them.",
+    "No file, no Steam ID and no usage data ever leaves your browser: there is no analytics, no cookie, and no request of any kind for as long as the page holds together. If it breaks, a technical report goes to Sentry, an American company whose European region keeps it in Frankfurt, so that the fault can be fixed: the error, where in the code it happened, your browser and system, and the IP address of that one request. Any seventeen-digit number is blanked out before it leaves. That report rests on the legitimate interest in fixing what breaks, and you can refuse it below. Your Steam ID and your language choice are kept on your own machine so you do not retype them, and clearing your browser data removes them.",
   onlineRiskHtml:
     "A save someone gives you may hold items obtained in ways the game does not expect, which can get an account flagged when playing online. That is why runners play shared saves offline. Rebind changes only which account a save belongs to — never its contents.",
   warrantyHtml:
@@ -86,9 +87,10 @@ const FR: Translations = {
   ledeHtml:
     "Une sauvegarde Elden Ring appartient au compte Steam qui l'a créée : celle d'un autre joueur, recopiée telle quelle, n'affiche aucun personnage en jeu. Cette page réaffecte celle qu'on vous a partagée, ou compresse les vôtres, pour les partager.",
   privacyHtml:
-    "<strong>Votre fichier ne quitte jamais cette page.</strong> Tout s'exécute dans votre navigateur : aucun serveur, aucun envoi.",
+    "<strong>Votre fichier ne quitte jamais cette page.</strong> Tout s'exécute dans votre navigateur : aucun serveur ne le lit, et rien de lui n'est envoyé nulle part.",
   step1: "Le fichier reçu",
-  dropHtml: "Déposez une sauvegarde, un <code>.savepack.zip</code> ou un zip de sauvegardes ici",
+  dropHtml:
+    "Déposez une sauvegarde, un <code>.savepack.zip</code> ou un zip de sauvegardes ici",
   pickFile: "Choisir un fichier",
   step2: "Votre identifiant Steam",
   steamIdHelpHtml:
@@ -138,10 +140,11 @@ const FR: Translations = {
   reboundSet: (count: number, name: string, id: string) =>
     `${count} sauvegardes réaffectées à ${id}, téléchargées ensemble dans ${name}.`,
   legalTitle: "Mentions légales",
+  reportingLabel: "Envoyer un rapport technique si la page casse",
   notAffiliatedHtml:
     "Rebind est un outil indépendant, sans affiliation ni approbation de FromSoftware, Bandai Namco ou Valve. Elden Ring et Steam sont des marques de leurs propriétaires respectifs, citées ici seulement pour dire avec quoi cet outil fonctionne.",
   noDataHtml:
-    "Aucune donnée n'est collectée. Aucun fichier, aucun identifiant, aucune donnée d'usage ne quitte votre navigateur ; il n'y a ni mesure d'audience ni cookie. Votre identifiant Steam et votre choix de langue restent sur votre machine pour ne pas les ressaisir, et vider les données du navigateur les supprime.",
+    "Aucun fichier, aucun identifiant Steam, aucune donnée d'usage ne quitte votre navigateur : il n'y a ni mesure d'audience, ni cookie, ni la moindre requête tant que la page fonctionne. Si elle casse, un rapport technique part chez Sentry, société américaine dont la région européenne le conserve à Francfort, pour que le défaut soit corrigé : l'erreur, l'endroit du code où elle est survenue, votre navigateur et votre système, et l'adresse IP de cette seule requête. Tout nombre de dix-sept chiffres est masqué avant l'envoi. Ce rapport repose sur l'intérêt légitime à corriger les défauts de la page, et vous pouvez le refuser ci-dessous. Votre identifiant Steam et votre choix de langue restent sur votre machine pour ne pas les ressaisir, et vider les données du navigateur les supprime.",
   onlineRiskHtml:
     "Une sauvegarde qu'on vous donne peut contenir des objets obtenus par des moyens que le jeu n'attend pas, ce qui peut faire signaler un compte en ligne. C'est pourquoi les runners jouent hors ligne les sauvegardes partagées. Rebind ne change que le compte auquel une sauvegarde appartient — jamais son contenu.",
   warrantyHtml:
@@ -188,7 +191,8 @@ const ERRORS: Record<Language, Record<ErrorCode, string>> = {
     "no-profile-block": "Cette sauvegarde ne contient pas de bloc profil.",
     "save-corrupted":
       "Cette sauvegarde est abîmée — ses propres empreintes ne correspondent pas, le jeu la refuserait.",
-    "no-save-in-archive": "Cette archive ne contient aucune sauvegarde Elden Ring.",
+    "no-save-in-archive":
+      "Cette archive ne contient aucune sauvegarde Elden Ring.",
     "unsafe-name":
       "Cette entrée serait extraite hors du dossier de destination.",
     "not-an-archive": "Ce fichier n'est pas un savepack.",
