@@ -1,0 +1,54 @@
+# Keeps the npm dependencies and the CI actions up to date.
+# Options: https://docs.github.com/en/code-security/dependabot/working-with-dependabot/dependabot-options-reference
+version: 2
+
+updates:
+  # pnpm-lock.yaml is a v9 lockfile, which the npm ecosystem reads natively.
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Paris
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: chore
+      include: scope
+    # Let a release sit in the wild before pulling it in: it keeps the churn of
+    # same-week re-releases out, and a compromised package out of the lockfile.
+    cooldown:
+      default-days: 7
+      semver-major-days: 14
+    groups:
+      # Minor and patch only, so the group stays mergeable without being read.
+      # A major matches no group and therefore gets a pull request of its own —
+      # never a seat in this one.
+      npm-minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Paris
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: ci
+      include: scope
+    cooldown:
+      default-days: 7
+    groups:
+      # Same split, same reason: a major action bump is read, the rest is not.
+      actions-minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
