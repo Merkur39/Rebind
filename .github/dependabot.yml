@@ -20,6 +20,14 @@ updates:
     cooldown:
       default-days: 7
       semver-major-days: 14
+    # @types/node describes a runtime rather than a library: it follows the Node
+    # major the project runs on, which .nvmrc pins, not the newest one published.
+    # A major ahead of that types calls the runtime does not have, and typecheck
+    # would then pass on code that throws. Raise it by hand, with .nvmrc.
+    ignore:
+      - dependency-name: "@types/node"
+        update-types:
+          - version-update:semver-major
     groups:
       # Minor and patch only, so the group stays mergeable without being read.
       # A major matches no group and therefore gets a pull request of its own —
