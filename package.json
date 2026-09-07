@@ -16,14 +16,14 @@
     "test": "node --test \"test/**/*.test.ts\""
   },
   "dependencies": {
-    "@sentry/browser": "^10.70.0",
+    "@sentry/browser": "^10.72.0",
     "fflate": "^0.8.2"
   },
   "devDependencies": {
     "@sentry/vite-plugin": "^5.4.0",
     "@types/node": "^24.13.3",
     "typescript": "^7.0.2",
-    "vite": "^8.2.1"
+    "vite": "^8.2.2"
   },
   "license": "GPL-3.0-or-later"
 }
